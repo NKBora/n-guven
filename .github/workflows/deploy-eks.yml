@@ -1,0 +1,44 @@
+name: Deploy EKS baseline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: demo-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Kubernetes baseline
+    runs-on: ubuntu-latest
+    environment: demo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure temporary AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Authenticate Docker to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Configure kubectl for EKS
+        run: aws eks update-kubeconfig --name "${{ vars.EKS_CLUSTER_NAME }}" --region "${{ vars.AWS_REGION }}"
+
+      - name: Validate manifests
+        run: kubectl kustomize infrastructure/kubernetes/overlays/demo >/dev/null
+
+      - name: Apply demo baseline
+        run: kubectl apply -k infrastructure/kubernetes/overlays/demo
+
+      - name: Verify namespace and service account
+        run: |
+          kubectl get namespace nguven-demo
+          kubectl get serviceaccount nguven-workload -n nguven-demo
