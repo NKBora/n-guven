@@ -1,0 +1,5 @@
+bucket         = "YOUR_TERRAFORM_STATE_BUCKET"
+key            = "nguven/demo/terraform.tfstate"
+region         = "eu-west-1"
+encrypt        = true
+use_lockfile   = true

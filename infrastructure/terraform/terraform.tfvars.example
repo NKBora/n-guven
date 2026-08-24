@@ -1,0 +1,10 @@
+aws_region             = "eu-west-1"
+github_repository      = "NKBora/n-guven"
+github_owner_id        = "179496127"
+github_repository_id   = "1344802052"
+github_environment     = "demo"
+eks_cluster_name       = "YOUR_EKS_CLUSTER_NAME"
+
+# An AWS account can have only one provider for this URL. If it already exists:
+# create_github_oidc_provider       = false
+# existing_github_oidc_provider_arn = "YOUR_EXISTING_GITHUB_OIDC_PROVIDER_ARN"
