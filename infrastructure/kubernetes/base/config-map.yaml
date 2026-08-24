@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nguven-runtime
+  namespace: nguven-demo
+data:
+  APP_ENV: demo
+  AWS_REGION: eu-west-1
