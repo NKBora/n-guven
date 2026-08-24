@@ -1,0 +1,12 @@
+title = "N-Güven Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Only explicit placeholder values are allowed"
+regexTarget = "match"
+regexes = [
+  '''CHANGE_ME''',
+  '''YOUR_[A-Z0-9_]+'''
+]

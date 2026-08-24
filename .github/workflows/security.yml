@@ -1,0 +1,64 @@
+name: Security
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  repository-policy:
+    name: Public repository policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Reject tracked sensitive file types
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden='(^|/)(\.env($|\.)|credentials$|terraform\.tfstate($|\.)|.*-(secret|secrets)\.ya?ml$|secrets?\.ya?ml$)|\.(pem|key|p12|pfx|tfvars|tfstate)$'
+          if git ls-files | grep -E "$forbidden" | grep -Ev '(^|/)\.env\.example$|\.tfvars\.example$'; then
+            echo "A tracked file violates the public repository policy." >&2
+            exit 1
+          fi
+
+  infrastructure-validation:
+    name: Terraform and Kubernetes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.5
+
+      - name: Check Terraform formatting
+        run: terraform -chdir=infrastructure/terraform fmt -check
+
+      - name: Initialize Terraform without remote state
+        run: terraform -chdir=infrastructure/terraform init -backend=false
+
+      - name: Validate Terraform
+        run: terraform -chdir=infrastructure/terraform validate
+
+      - name: Render Kubernetes demo overlay
+        run: kubectl kustomize infrastructure/kubernetes/overlays/demo >/dev/null
