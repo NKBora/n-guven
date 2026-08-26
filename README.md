@@ -4,7 +4,7 @@ N-Güven, NSosyal odaklı bir içerik güveni ve şeffaflık platformu olarak ta
 
 N-Güven **faktüel doğruluk tespiti yapmaz**, genel amaçlı bir fact-checking sistemi değildir ve içeriği otomatik olarak kaldırmaz ya da moderasyona tabi tutmaz. “İçerik özgünlüğü / üretim sinyali”, bir içeriğin nasıl üretilmiş olabileceğine ilişkin model çıktısıdır; “faktüel doğrulama” ise içerikteki iddiaların kanıtlarla doğru olup olmadığını araştırır. Bu iki problem birbirinin yerine kullanılamaz. Kamu figürü bağlamı yalnızca kontrollü bir referans galerisi ve yüksek güven eşiğiyle, sınırlı bir bağlam sinyali olarak planlanmaktadır.
 
-> **Proje durumu — başlangıç iskeleti:** Bu depo şu anda güvenli public-repository, GitHub Actions OIDC, Terraform IAM/ECR/Secrets Manager ve Kubernetes namespace/service-account temelini içerir. ASP.NET Core, Vue, FastAPI/AI, PostgreSQL, RabbitMQ ve uygulama workload'ları için ayrılmış dizinler vardır ancak uygulama kaynak kodu henüz eklenmemiştir. Aşağıdaki her bölüm mevcut durum ile hedef mimariyi ayrı etiketler.
+> **Proje durumu — başlangıç iskeleti:** Bu depo güvenli public-repository, GitHub Actions OIDC, Terraform IAM/ECR/Secrets Manager ve Kubernetes namespace/service-account temeline ek olarak Türkçe metin AI servisi için modelden bağımsız FastAPI sözleşme temelini içerir. Gerçek ML modeli, ASP.NET Core, Vue, PostgreSQL, RabbitMQ ve uygulama workload'ları henüz eklenmemiştir. Aşağıdaki her bölüm mevcut durum ile hedef mimariyi ayrı etiketler.
 
 ## İçindekiler
 
@@ -62,7 +62,8 @@ Bu hedefler proje yönünü tanımlar; bir hedefin burada yer alması uygulanmı
 | Hazır, apply edilmedi | ECR, IAM, Secrets Manager ve EKS erişim kaynakları | Terraform tanımları vardır; canlı AWS hesabına uygulanmamıştır |
 | Planlanan | Vue 3 frontend ve ASP.NET Core backend | Sorumluluk dizinleri boştur; çalıştırılabilir proje yoktur |
 | Planlanan | PostgreSQL, RabbitMQ/Amazon MQ | Uygulama ve deployment tanımları henüz yoktur |
-| Planlanan | Türkçe metin, görsel ve kamu figürü AI servisleri | Servis dizinleri boştur; model ağırlığı, inference veya ölçüm sonucu yoktur |
+| Uygulandı, model yok | Türkçe metin AI servis temeli | Typed FastAPI sözleşmeleri, deterministik yapılandırılmamış inference adaptörü, pytest sözleşme testleri ve non-root Dockerfile |
+| Planlanan | Görsel ve kamu figürü AI servisleri | Servis dizinleri boştur; model ağırlığı, inference veya ölçüm sonucu yoktur |
 | Planlanan | Analiz kaydı, content-hash reuse, feedback ve analitik | Şema/API/iş kodu henüz yoktur |
 
 Dolayısıyla bugün klonlanan depo bir uygulama demosu çalıştırmaz; güvenli geliştirme ve dağıtım tabanı sağlar.
@@ -145,10 +146,10 @@ n-guven/
 │   ├── backend/                 # Planlanan ASP.NET Core uygulaması
 │   └── web/                     # Planlanan Vue uygulaması
 ├── services/
-│   ├── text-ai/                 # Planlanan Türkçe metin servisi
+│   ├── text-ai/                 # FastAPI sözleşme temeli; model yüklenmez
 │   ├── image-ai/                # Planlanan görsel servisi
 │   └── public-figure-ai/        # Planlanan sınırlı bağlam servisi
-├── ml/evaluation/               # Planlanan deney ve değerlendirme kodu
+├── ml/evaluation/               # Manifest şeması; henüz benchmark yok
 ├── infrastructure/
 │   ├── kubernetes/              # Base + demo Kustomize kaynakları
 │   └── terraform/               # IAM, ECR, Secrets Manager, Pod Identity
@@ -160,7 +161,7 @@ n-guven/
 └── README.md
 ```
 
-Boş uygulama dizinleri yalnız hedef sınırlarını görünür kılar; bu dizinler kod varmış gibi değerlendirilmemelidir. Altyapı tanımları additive hazırlıktır ve otomatik olarak canlı AWS kaynaklarına uygulanmamıştır.
+Boş uygulama dizinleri yalnız hedef sınırlarını görünür kılar; bu dizinler kod varmış gibi değerlendirilmemelidir. `services/text-ai/` bu durumun istisnasıdır ve yalnız servis/sözleşme temelini içerir. Altyapı tanımları additive hazırlıktır ve otomatik olarak canlı AWS kaynaklarına uygulanmamıştır.
 
 ## Commit Geçmişi
 
@@ -211,11 +212,13 @@ Queue/routing adları, manual acknowledgement, retry/backoff, DLQ ve idempotency
 
 ## Yapay Zekâ Mimarisi
 
-**Durum: Planlanan; model ağırlığı ve ölçülmüş sonuç yoktur.** AI servislerinin backend process'inden ayrılması; Python bağımlılıklarının izole edilmesini, CPU worker'larının API'den bağımsız ölçeklenmesini ve model sürümlerinin ayrı yönetilmesini amaçlar.
+**Durum: Türkçe metin servis/sözleşme temeli uygulandı; model ağırlığı ve ölçülmüş sonuç yoktur.** AI servislerinin backend process'inden ayrılması; Python bağımlılıklarının izole edilmesini, CPU worker'larının API'den bağımsız ölçeklenmesini ve model sürümlerinin ayrı yönetilmesini amaçlar.
 
 ### Türkçe Metin Analizi
 
-ModernBERT-TR aday ana model, BERTurk ise karşılaştırma baseline'ı olarak değerlendirilecektir. Hedef servis FastAPI + ONNX Runtime üzerinde CPU inference'tır; INT8 quantization ancak kalite/latency ölçümleri uygunsa kullanılacaktır. Unicode/Türkçe normalizasyon, uzunluk yönetimi, tokenizer sürümü, duplicate kontrolü ve kaynak-temelli veri ayrımı deney protokolünde kayıt altına alınacaktır.
+`services/text-ai/` altında Python 3.12/FastAPI uygulaması, `GET /health` ve `POST /v1/analyze/text` sözleşmeleri, merkezi karakter sınırı ve modelden bağımsız inference arayüzü bulunur. Mevcut deterministik adaptör skor üretmez; `UNAVAILABLE`, `not-configured` sürümleri ve açık yapılandırılmamış açıklaması döndürür.
+
+ModernBERT-TR ve BERTurk yalnız gelecek model adaylarıdır; uygulanmış, seçilmiş veya ölçülmüş değildir. Gelecekteki hedef CPU inference'tır; tokenizer, ONNX Runtime veya quantization kararı ancak veri, lisans, kalite ve latency doğrulamasından sonra verilecektir. Unicode/Türkçe normalizasyon, uzunluk yönetimi, tokenizer sürümü, duplicate kontrolü ve kaynak-temelli veri ayrımı deney protokolünde kayıt altına alınacaktır.
 
 Model card veya üçüncü taraf benchmark değerleri N-Güven sonucu olarak sunulmayacaktır. Projenin kendi kapalı test protokolü tamamlanmadan başarı iddiası yapılmaz.
 
@@ -237,7 +240,7 @@ Kategori analitiği hedef kapsamda olsa da sınıflandırıcı, taxonomy veya ö
 
 ## Model Doğrulama ve Değerlendirme
 
-`ml/evaluation/` şu anda boştur; ölçülen N-Güven metriği bulunmamaktadır. Aşağıdaki metrikler ve eşikler **değerlendirme taslağıdır**, elde edilmiş sonuç değildir.
+`ml/evaluation/` kontrollü dataset manifesti için JSON Schema ve gelecekteki script/sonuç dizinlerini içerir. Henüz benchmark yapılmamıştır ve ölçülen N-Güven metriği bulunmamaktadır. Aşağıdaki metrikler ve eşikler **değerlendirme taslağıdır**, elde edilmiş sonuç değildir.
 
 | Boyut | Planlanan ölçüm |
 | --- | --- |
@@ -315,7 +318,7 @@ flowchart TB
 
 ### ECR
 
-Terraform `backend`, `web`, `text-ai`, `image-ai` ve `public-figure-ai` için ayrı private ECR repository hazırlayabilir. Repository'lerde immutable tag, AES-256 server-side encryption ve scan-on-push tanımlıdır. Uygulama/Dockerfile bulunmadığı için workflow bugün image build veya push yapmaz.
+Terraform `backend`, `web`, `text-ai`, `image-ai` ve `public-figure-ai` için ayrı private ECR repository hazırlayabilir. Repository'lerde immutable tag, AES-256 server-side encryption ve scan-on-push tanımlıdır. Text AI için local Dockerfile bulunur; mevcut workflow yine image build veya push yapmaz.
 
 Hedef zincir şudur: GitHub Actions → OIDC → Docker build → ECR push → EKS rollout. Registry parolası kalıcı olarak saklanmaz; ECR login IAM'in geçici credential'ını kullanır.
 
@@ -452,7 +455,7 @@ Bugünkü repository baseline'ını doğrulamak için:
 - `kubectl` (Kustomize desteğiyle),
 - isteğe bağlı Gitleaks.
 
-.NET, Node.js, Python, Docker ve Docker Compose uygulama kodu eklendiğinde gerekecektir; bugün bunlarla çalıştırılabilir servis yoktur.
+Text AI servisi için Python 3.12 gerekir; Docker ile local image doğrulaması isteğe bağlıdır. .NET, Node.js ve Docker Compose henüz çalıştırılabilir karşılıkları bulunmadığı için gerekli değildir.
 
 ### Kurulum
 
@@ -475,17 +478,35 @@ kubectl kustomize infrastructure/kubernetes/overlays/demo >/dev/null
 
 Provider download için ağ erişimi gerekir. Bu komutlar AWS kaynağı oluşturmaz.
 
+### Text AI servisini çalıştırma
+
+```bash
+cd services/text-ai
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+pytest
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
 ## Docker
 
-**Durum: Planlanan.** Depoda Dockerfile veya Docker Compose yoktur; bu nedenle çalışmayan `docker compose up` komutu belgelenmemiştir.
+**Durum: Yalnız text AI için uygulandı.** Python 3.12 slim tabanlı image non-root kullanıcıyla servisi port `8000` üzerinde çalıştırır.
 
-Backend, frontend ve her AI servisinin bağımsız, non-root ve minimal runtime image üretmesi hedeflenmektedir. Local Docker Compose PostgreSQL + RabbitMQ ve geliştirme servislerini bir araya getirecek; AWS demo ise ECR image'larını EKS workload'ları olarak çalıştıracaktır. Secret değerleri Dockerfile `ENV` veya build arg içine yazılmayacaktır.
+```bash
+docker build -t nguven-text-ai services/text-ai
+docker run --rm -p 8000:8000 nguven-text-ai
+curl http://localhost:8000/health
+```
+
+Backend, frontend ve diğer AI servisleri için image henüz yoktur. Gelecekteki Local Docker Compose PostgreSQL + RabbitMQ ve geliştirme servislerini bir araya getirebilir. Secret değerleri Dockerfile `ENV` veya build arg içine yazılmayacaktır.
 
 ## Testler
 
 Bugün çalıştırılabilen repository kontrolleri:
 
 ```bash
+python3.12 -m pytest services/text-ai/tests
 gitleaks detect --source . --config .gitleaks.toml --redact
 terraform -chdir=infrastructure/terraform fmt -check
 terraform -chdir=infrastructure/terraform init -backend=false
@@ -493,7 +514,7 @@ terraform -chdir=infrastructure/terraform validate
 kubectl kustomize infrastructure/kubernetes/overlays/demo >/dev/null
 ```
 
-`.NET`, frontend, Python, integration ve AI evaluation testleri henüz yoktur. İlgili projeler eklendiğinde gerçek komutlar (`dotnet test`, frontend test runner, `pytest` vb.) bu bölüme ancak repository'de karşılığı bulunduğunda eklenecektir.
+Text AI testleri health, başarılı stub sözleşmesi, boş girdiler ve merkezi maksimum uzunluk doğrulamasını kapsar. `.NET`, frontend, integration ve model evaluation testleri henüz yoktur.
 
 ## AWS'e Dağıtım
 
@@ -599,7 +620,7 @@ CPU yerine GPU zorunluluğu yaratmamak, minimum replica, kısa aktif test pencer
 
 ## API
 
-**Durum: Yok.** Swagger/OpenAPI endpoint'i veya API implementation'ı henüz bulunmamaktadır. Hedef API grupları Content, Analysis, Feedback, Analytics ve Admin'dir. ASP.NET Core uygulaması eklendiğinde gerçek local Swagger URL'i ve yalnız mevcut endpoint grupları burada belgelenecektir.
+**Durum: Text AI sözleşmesi mevcut; application API planlanmaktadır.** FastAPI `GET /health` ve `POST /v1/analyze/text` endpoint'lerini, `/docs` altında üretilen OpenAPI arayüzüyle sunar. Mevcut analiz endpoint'i gerçek model skoru üretmez. Content, Feedback, Analytics ve Admin grupları ASP.NET Core uygulaması eklendiğinde belgelenecektir.
 
 ## Lisanslar ve Model Kullanımı
 

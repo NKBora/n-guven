@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:dataset-manifest-record:v1",
+  "title": "N-Güven Dataset Manifest Record",
+  "description": "Traceability contract for one future evaluation dataset record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "source",
+    "sourceUrl",
+    "accessedAt",
+    "license",
+    "contentHash",
+    "language",
+    "contentType",
+    "label",
+    "labelSource",
+    "generatorModel",
+    "transformation",
+    "intendedUse",
+    "split"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "sourceUrl": {
+      "type": "string",
+      "format": "uri",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "accessedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "contentType": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "label": {
+      "description": "Dataset label value; the project ontology is intentionally not fixed yet.",
+      "type": ["string", "number", "integer", "boolean", "null"]
+    },
+    "labelSource": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "generatorModel": {
+      "description": "Generator identifier, or null for genuinely human-generated content.",
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "transformation": {
+      "description": "Known transformation or a namespaced future extension.",
+      "type": "string",
+      "anyOf": [
+        {
+          "enum": ["none", "paraphrase", "translation"]
+        },
+        {
+          "pattern": "^custom:[a-z0-9][a-z0-9._-]{0,63}$"
+        }
+      ]
+    },
+    "intendedUse": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "split": {
+      "type": "string",
+      "enum": ["train", "validation", "test"]
+    }
+  }
+}
