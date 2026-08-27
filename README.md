@@ -4,7 +4,7 @@ N-Güven, NSosyal odaklı bir içerik güveni ve şeffaflık platformu olarak ta
 
 N-Güven **faktüel doğruluk tespiti yapmaz**, genel amaçlı bir fact-checking sistemi değildir ve içeriği otomatik olarak kaldırmaz ya da moderasyona tabi tutmaz. “İçerik özgünlüğü / üretim sinyali”, bir içeriğin nasıl üretilmiş olabileceğine ilişkin model çıktısıdır; “faktüel doğrulama” ise içerikteki iddiaların kanıtlarla doğru olup olmadığını araştırır. Bu iki problem birbirinin yerine kullanılamaz. Kamu figürü bağlamı yalnızca kontrollü bir referans galerisi ve yüksek güven eşiğiyle, sınırlı bir bağlam sinyali olarak planlanmaktadır.
 
-> **Proje durumu — başlangıç iskeleti:** Bu depo güvenli public-repository, GitHub Actions OIDC, Terraform IAM/ECR/Secrets Manager ve Kubernetes namespace/service-account temeline ek olarak Türkçe metin AI servisi için modelden bağımsız FastAPI sözleşme temelini içerir. Gerçek ML modeli, ASP.NET Core, Vue, PostgreSQL, RabbitMQ ve uygulama workload'ları henüz eklenmemiştir. Aşağıdaki her bölüm mevcut durum ile hedef mimariyi ayrı etiketler.
+> **Proje durumu — başlangıç iskeleti:** Bu depo güvenli public-repository, GitHub Actions OIDC, Terraform IAM/ECR/Secrets Manager ve Kubernetes namespace/service-account temeline ek olarak Türkçe metin AI servisi için modelden bağımsız FastAPI sözleşme temelini ve tekrarlanabilir ML değerlendirme hattını içerir. Gerçek ML modeli, ASP.NET Core, Vue, PostgreSQL, RabbitMQ ve uygulama workload'ları henüz eklenmemiştir. Aşağıdaki her bölüm mevcut durum ile hedef mimariyi ayrı etiketler.
 
 ## İçindekiler
 
@@ -63,6 +63,7 @@ Bu hedefler proje yönünü tanımlar; bir hedefin burada yer alması uygulanmı
 | Planlanan | Vue 3 frontend ve ASP.NET Core backend | Sorumluluk dizinleri boştur; çalıştırılabilir proje yoktur |
 | Planlanan | PostgreSQL, RabbitMQ/Amazon MQ | Uygulama ve deployment tanımları henüz yoktur |
 | Uygulandı, model yok | Türkçe metin AI servis temeli | Typed FastAPI sözleşmeleri, deterministik yapılandırılmamış inference adaptörü, pytest sözleşme testleri ve non-root Dockerfile |
+| Uygulandı, sonuç yok | ML değerlendirme hattı | Manifest/tahmin/sonuç şemaları, duplicate ve leakage kontrolleri, deterministik split, modelden bağımsız metrik hesaplama ve pytest testleri |
 | Planlanan | Görsel ve kamu figürü AI servisleri | Servis dizinleri boştur; model ağırlığı, inference veya ölçüm sonucu yoktur |
 | Planlanan | Analiz kaydı, content-hash reuse, feedback ve analitik | Şema/API/iş kodu henüz yoktur |
 
@@ -140,6 +141,7 @@ Bu ayrım sayesinde sosyal akış/API pahalı inference tamamlanana kadar beklem
 ```text
 n-guven/
 ├── .github/workflows/
+│   ├── ai-validation.yml
 │   ├── deploy-eks.yml
 │   └── security.yml
 ├── apps/
@@ -149,7 +151,7 @@ n-guven/
 │   ├── text-ai/                 # FastAPI sözleşme temeli; model yüklenmez
 │   ├── image-ai/                # Planlanan görsel servisi
 │   └── public-figure-ai/        # Planlanan sınırlı bağlam servisi
-├── ml/evaluation/               # Manifest şeması; henüz benchmark yok
+├── ml/evaluation/               # Doğrulama, leakage-safe split ve offline değerlendirme hattı
 ├── infrastructure/
 │   ├── kubernetes/              # Base + demo Kustomize kaynakları
 │   └── terraform/               # IAM, ECR, Secrets Manager, Pod Identity
@@ -175,6 +177,14 @@ Repository geçmişi jüri ve teknik inceleme için atomik, bağımlılık sıra
 | 4 | `ci(security): enforce secret scanning and infrastructure validation` | Gitleaks, tracked sensitive-file policy, Terraform validate ve Kubernetes render kontrolleri |
 | 5 | `ci(deploy): add OIDC-based EKS baseline deployment` | GitHub `demo` Environment, geçici AWS credential, ECR login ve EKS baseline apply akışı |
 | 6 | `docs(readme): document architecture, security and operations` | Gerçek/mevcut durum ayrımı, sistem/AI/AWS mimarisi, geliştirme, deployment, kapsam ve takım sorumlulukları |
+| 7 | `feat(ai): scaffold text analysis service` | Modelden bağımsız FastAPI sözleşmesi, health endpoint'i ve non-root image |
+| 8 | `test(ai): add text service contract tests` | Health, request validation ve yapılandırılmamış inference davranışı testleri |
+| 9 | `feat(ml): add evaluation manifest foundation` | Dataset izlenebilirliği JSON Schema'sı ve kontrollü artefakt dizinleri |
+| 10 | `feat(ml): add dataset manifest validation` | JSON/JSONL yükleme, schema doğrulama ve alan bazlı hata raporlama CLI'ı |
+| 11 | `feat(ml): implement leakage-safe dataset splitting` | Duplicate, kaynak/üretici ailesi sızıntı kontrolleri ve tekrarlanabilir split ataması |
+| 12 | `feat(ml): add reproducible evaluation runner` | Offline tahmin sözleşmesi, makro metrikler ve izlenebilir sonuç artefaktı |
+| 13 | `ci(ai): validate text AI and evaluation contracts` | Python test paketleri ile non-root container build doğrulaması |
+| 14 | `docs(ml): document evaluation workflow` | Uygulanan sınırlar, CLI akışı, veri yönetişimi ve kanıt/iddia ayrımı |
 
 Her commit kendi teknik amacıyla incelenebilir; runtime secret, canlı AWS değişikliği veya uygulanmamış application özelliği commit geçmişinde tamamlanmış gibi gösterilmez.
 
@@ -240,7 +250,9 @@ Kategori analitiği hedef kapsamda olsa da sınıflandırıcı, taxonomy veya ö
 
 ## Model Doğrulama ve Değerlendirme
 
-`ml/evaluation/` kontrollü dataset manifesti için JSON Schema ve gelecekteki script/sonuç dizinlerini içerir. Henüz benchmark yapılmamıştır ve ölçülen N-Güven metriği bulunmamaktadır. Aşağıdaki metrikler ve eşikler **değerlendirme taslağıdır**, elde edilmiş sonuç değildir.
+`ml/evaluation/`; dataset manifesti ile offline tahmin artefaktlarını JSON Schema ile doğrular, duplicate kayıtları ve split'ler arası kaynak/üretici ailesi sızıntısını reddeder, sabit seed ile tekrarlanabilir split üretir ve izlenebilir sonuç artefaktı oluşturur. Girdilerin SHA-256 değerleri; model/dataset sürümü, Git commit'i ve seed ile birlikte kaydedilir.
+
+Bu altyapı model çalıştırmaz ve depoda gerçek dataset ya da benchmark sonucu bulunmaz. Dolayısıyla henüz ölçülen N-Güven metriği yoktur. Aşağıdaki metrikler ve eşikler **değerlendirme taslağıdır**, elde edilmiş sonuç değildir.
 
 | Boyut | Planlanan ölçüm |
 | --- | --- |
@@ -249,7 +261,7 @@ Kategori analitiği hedef kapsamda olsa da sınıflandırıcı, taxonomy veya ö
 | Performans | P50/P95 latency, throughput, peak memory |
 | Robustness | Kaynak, generator family ve dönüşüm bazlı kırılım |
 
-Veri ayrımı training/validation/test seviyesinde yapılacak; duplicate ve aynı kaynaktan sızıntıyı önlemek için source-level separation uygulanacaktır. Görsellerde generator-family separation, metin ve görselde kapalı test seti, cross-generator evaluation ve dönüşüm testleri planlanmaktadır.
+Training/validation/test ayrımı için duplicate, source-level ve generator-family sızıntı kontrolleri uygulanmıştır. Kapalı test seti, cross-generator evaluation, dönüşüm testleri ve gerçek veri protokolü henüz planlanan kapsamdadır.
 
 | Hedef | Eşik | Durum |
 | --- | ---: | --- |
@@ -489,6 +501,19 @@ pytest
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
+### ML değerlendirme hattını doğrulama
+
+```bash
+cd ml/evaluation
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python -m pytest
+nguven-eval --help
+```
+
+Manifest doğrulama, leakage kontrolü, deterministik split ve offline tahmin değerlendirme komutları için `ml/evaluation/README.md` belgesine bakın. Bu komutlar model veya dataset indirmez.
+
 ## Docker
 
 **Durum: Yalnız text AI için uygulandı.** Python 3.12 slim tabanlı image non-root kullanıcıyla servisi port `8000` üzerinde çalıştırır.
@@ -507,6 +532,7 @@ Bugün çalıştırılabilen repository kontrolleri:
 
 ```bash
 python3.12 -m pytest services/text-ai/tests
+(cd ml/evaluation && python3.12 -m pytest)
 gitleaks detect --source . --config .gitleaks.toml --redact
 terraform -chdir=infrastructure/terraform fmt -check
 terraform -chdir=infrastructure/terraform init -backend=false
@@ -514,7 +540,7 @@ terraform -chdir=infrastructure/terraform validate
 kubectl kustomize infrastructure/kubernetes/overlays/demo >/dev/null
 ```
 
-Text AI testleri health, başarılı stub sözleşmesi, boş girdiler ve merkezi maksimum uzunluk doğrulamasını kapsar. `.NET`, frontend, integration ve model evaluation testleri henüz yoktur.
+Text AI testleri health, başarılı stub sözleşmesi, boş girdiler ve merkezi maksimum uzunluk doğrulamasını kapsar. ML testleri schema validation, duplicate/leakage rejection, deterministik split, tahmin kapsamı, metrik hesabı ve sonuç sözleşmesini kapsar. `.NET`, frontend, gerçek model inference ve benchmark testleri henüz yoktur.
 
 ## AWS'e Dağıtım
 
