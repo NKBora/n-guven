@@ -8,6 +8,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
+from nguven_evaluation.dataset_inputs import (
+    DEFAULT_INPUT_SCHEMA_PATH,
+    DEFAULT_MAX_INPUT_BYTES,
+    DatasetInputError,
+    load_dataset_input,
+)
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
     EvaluationMetadata,
@@ -15,11 +21,23 @@ from nguven_evaluation.evaluation import (
     load_predictions,
     sha256_file,
 )
+from nguven_evaluation.integrity import (
+    DatasetIntegrityError,
+    verify_dataset_content_hashes,
+)
 from nguven_evaluation.manifests import (
     DEFAULT_SCHEMA_PATH,
     ManifestValidationError,
     load_manifest,
 )
+from nguven_evaluation.offline_preprocessing import (
+    DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    OfflinePreprocessingError,
+    build_preprocessed_records,
+    ensure_distinct_artifact_paths,
+    write_private_jsonl,
+)
+from nguven_evaluation.preprocessing import DEFAULT_PREPROCESSING_VERSION
 from nguven_evaluation.splitting import (
     DEFAULT_GROUP_DIMENSIONS,
     DatasetLeakageError,
@@ -39,6 +57,62 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("manifest", type=Path)
     validate_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+
+    input_parser = subparsers.add_parser(
+        "validate-input",
+        help="validate a local-only JSON or JSON Lines text dataset input",
+    )
+    input_parser.add_argument("input", type=Path)
+    input_parser.add_argument("--schema", type=Path, default=DEFAULT_INPUT_SCHEMA_PATH)
+    input_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_INPUT_BYTES,
+    )
+
+    integrity_parser = subparsers.add_parser(
+        "verify-content-hashes",
+        help="verify local text content against manifest SHA-256 hashes",
+    )
+    integrity_parser.add_argument("manifest", type=Path)
+    integrity_parser.add_argument("--input", type=Path, required=True)
+    integrity_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    integrity_parser.add_argument(
+        "--input-schema",
+        type=Path,
+        default=DEFAULT_INPUT_SCHEMA_PATH,
+    )
+    integrity_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_INPUT_BYTES,
+    )
+
+    preprocess_parser = subparsers.add_parser(
+        "preprocess-text",
+        help="verify and preprocess local text into a private JSON Lines artifact",
+    )
+    preprocess_parser.add_argument("manifest", type=Path)
+    preprocess_parser.add_argument("--input", type=Path, required=True)
+    preprocess_parser.add_argument("--output", type=Path, required=True)
+    preprocess_parser.add_argument("--version", default=DEFAULT_PREPROCESSING_VERSION)
+    preprocess_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    preprocess_parser.add_argument(
+        "--input-schema",
+        type=Path,
+        default=DEFAULT_INPUT_SCHEMA_PATH,
+    )
+    preprocess_parser.add_argument(
+        "--output-schema",
+        type=Path,
+        default=DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    )
+    preprocess_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_INPUT_BYTES,
+    )
+    preprocess_parser.add_argument("--force", action="store_true")
 
     audit_parser = subparsers.add_parser(
         "check-leakage",
@@ -84,8 +158,39 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        records = load_manifest(args.manifest, schema_path=args.schema)
-        if args.command == "check-leakage":
+        if args.command == "validate-input":
+            records = load_dataset_input(
+                args.input,
+                schema_path=args.schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+        else:
+            records = load_manifest(args.manifest, schema_path=args.schema)
+        if args.command == "preprocess-text":
+            ensure_distinct_artifact_paths(
+                args.output,
+                [args.manifest, args.input, args.schema, args.input_schema, args.output_schema],
+            )
+            input_records = load_dataset_input(
+                args.input,
+                schema_path=args.input_schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+            records = build_preprocessed_records(
+                records,
+                input_records,
+                version=args.version,
+                schema_path=args.output_schema,
+            )
+            write_private_jsonl(records, args.output, force=args.force)
+        elif args.command == "verify-content-hashes":
+            input_records = load_dataset_input(
+                args.input,
+                schema_path=args.input_schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+            integrity_report = verify_dataset_content_hashes(records, input_records)
+        elif args.command == "check-leakage":
             audit_manifest(
                 records,
                 group_dimensions=args.group_by or DEFAULT_GROUP_DIMENSIONS,
@@ -132,8 +237,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
     except (
         DatasetLeakageError,
+        DatasetInputError,
+        DatasetIntegrityError,
         EvaluationInputError,
         ManifestValidationError,
+        OfflinePreprocessingError,
         ValueError,
     ) as error:
         print(error)
@@ -141,6 +249,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "validate-manifest":
         print(f"Validated {len(records)} record(s) from {args.manifest}")
+    elif args.command == "validate-input":
+        print(f"Validated {len(records)} local input record(s) from {args.input}")
+    elif args.command == "verify-content-hashes":
+        print(
+            f"Verified {integrity_report.verified_record_count} content hash(es) "
+            f"from {args.manifest}"
+        )
+    elif args.command == "preprocess-text":
+        print(
+            f"Wrote {len(records)} preprocessed record(s) with {args.version} "
+            f"to {args.output}"
+        )
     elif args.command == "check-leakage":
         print(f"Leakage checks passed for {len(records)} record(s) from {args.manifest}")
     elif args.command == "split-manifest":

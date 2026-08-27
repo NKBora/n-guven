@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   contracts:
-    name: Python contracts
+    name: Python and preprocessing contracts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -48,9 +48,34 @@ jobs:
         working-directory: services/text-ai
         run: python -m pytest
 
-      - name: Test evaluation contracts
+      - name: Test dataset integrity and preprocessing pipeline
         working-directory: ml/evaluation
-        run: python -m pytest
+        run: |
+          python -m pytest \
+            tests/test_dataset_inputs.py \
+            tests/test_integrity.py \
+            tests/test_preprocessing.py \
+            tests/test_offline_preprocessing.py \
+            tests/test_preprocessing_pipeline.py
+
+      - name: Test evaluation and splitting contracts
+        working-directory: ml/evaluation
+        run: |
+          python -m pytest \
+            tests/test_evaluation.py \
+            tests/test_manifests.py \
+            tests/test_splitting.py
+
+      - name: Verify preprocessing CLI registration
+        run: |
+          nguven-eval validate-input --help >/dev/null
+          nguven-eval verify-content-hashes --help >/dev/null
+          nguven-eval preprocess-text --help >/dev/null
+
+      - name: Verify local ML artifacts stay untracked
+        run: |
+          git check-ignore --quiet --no-index ml/evaluation/inputs/private-dataset.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/preprocessed/private-run.jsonl
 
   container:
     name: Text AI container
