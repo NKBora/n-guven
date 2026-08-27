@@ -29,6 +29,8 @@ ml/evaluation/
 │   └── schema.json
 ├── manifests/
 │   └── schema.json
+├── preprocessed/
+│   └── schema.json
 ├── predictions/
 │   └── schema.json
 ├── results/
@@ -86,6 +88,17 @@ For text records, `contentHash` is `sha256:` followed by the lowercase SHA-256 d
 The initial `tr-text-v1` contract removes one leading Unicode BOM, normalizes CRLF/CR line endings to LF, and applies NFC Unicode normalization. It rejects NUL characters and text that becomes empty.
 
 Case, Turkish dotted/dotless I, punctuation, internal spacing, and leading/trailing whitespace are preserved because these may carry useful generation signals. The pipeline deliberately does not lowercase, collapse whitespace, tokenize, truncate, or apply model-specific transformations.
+
+Create a deterministic local-only JSON Lines artifact after manifest and hash verification:
+
+```bash
+nguven-eval preprocess-text path/to/manifest.jsonl \
+  --input path/to/local-input.jsonl \
+  --output ml/evaluation/preprocessed/run-id.jsonl \
+  --version tr-text-v1
+```
+
+The command refuses source/output path collisions, symbolic-link outputs, non-JSONL output names, and overwrites unless `--force` is explicit. Output is written atomically with owner-only read/write permissions. Files under `ml/evaluation/preprocessed/` are ignored by Git except for the schema because they contain local text.
 
 Reject duplicate identities/content and source or generator groups spanning multiple splits:
 

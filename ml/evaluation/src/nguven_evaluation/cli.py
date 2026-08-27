@@ -30,6 +30,14 @@ from nguven_evaluation.manifests import (
     ManifestValidationError,
     load_manifest,
 )
+from nguven_evaluation.offline_preprocessing import (
+    DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    OfflinePreprocessingError,
+    build_preprocessed_records,
+    ensure_distinct_artifact_paths,
+    write_private_jsonl,
+)
+from nguven_evaluation.preprocessing import DEFAULT_PREPROCESSING_VERSION
 from nguven_evaluation.splitting import (
     DEFAULT_GROUP_DIMENSIONS,
     DatasetLeakageError,
@@ -79,6 +87,32 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=DEFAULT_MAX_INPUT_BYTES,
     )
+
+    preprocess_parser = subparsers.add_parser(
+        "preprocess-text",
+        help="verify and preprocess local text into a private JSON Lines artifact",
+    )
+    preprocess_parser.add_argument("manifest", type=Path)
+    preprocess_parser.add_argument("--input", type=Path, required=True)
+    preprocess_parser.add_argument("--output", type=Path, required=True)
+    preprocess_parser.add_argument("--version", default=DEFAULT_PREPROCESSING_VERSION)
+    preprocess_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    preprocess_parser.add_argument(
+        "--input-schema",
+        type=Path,
+        default=DEFAULT_INPUT_SCHEMA_PATH,
+    )
+    preprocess_parser.add_argument(
+        "--output-schema",
+        type=Path,
+        default=DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    )
+    preprocess_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_INPUT_BYTES,
+    )
+    preprocess_parser.add_argument("--force", action="store_true")
 
     audit_parser = subparsers.add_parser(
         "check-leakage",
@@ -132,7 +166,24 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
-        if args.command == "verify-content-hashes":
+        if args.command == "preprocess-text":
+            ensure_distinct_artifact_paths(
+                args.output,
+                [args.manifest, args.input, args.schema, args.input_schema, args.output_schema],
+            )
+            input_records = load_dataset_input(
+                args.input,
+                schema_path=args.input_schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+            records = build_preprocessed_records(
+                records,
+                input_records,
+                version=args.version,
+                schema_path=args.output_schema,
+            )
+            write_private_jsonl(records, args.output, force=args.force)
+        elif args.command == "verify-content-hashes":
             input_records = load_dataset_input(
                 args.input,
                 schema_path=args.input_schema,
@@ -190,6 +241,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         DatasetIntegrityError,
         EvaluationInputError,
         ManifestValidationError,
+        OfflinePreprocessingError,
         ValueError,
     ) as error:
         print(error)
@@ -203,6 +255,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Verified {integrity_report.verified_record_count} content hash(es) "
             f"from {args.manifest}"
+        )
+    elif args.command == "preprocess-text":
+        print(
+            f"Wrote {len(records)} preprocessed record(s) with {args.version} "
+            f"to {args.output}"
         )
     elif args.command == "check-leakage":
         print(f"Leakage checks passed for {len(records)} record(s) from {args.manifest}")

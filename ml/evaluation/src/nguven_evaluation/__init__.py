@@ -14,6 +14,11 @@ from nguven_evaluation.integrity import (
     verify_dataset_content_hashes,
 )
 from nguven_evaluation.manifests import ManifestValidationError, load_manifest
+from nguven_evaluation.offline_preprocessing import (
+    OfflinePreprocessingError,
+    build_preprocessed_records,
+    write_private_jsonl,
+)
 from nguven_evaluation.preprocessing import (
     DEFAULT_PREPROCESSING_VERSION,
     SUPPORTED_PREPROCESSING_VERSIONS,
@@ -37,12 +42,14 @@ __all__ = [
     "EvaluationMetadata",
     "IntegrityReport",
     "ManifestValidationError",
+    "OfflinePreprocessingError",
     "PreprocessedText",
     "SUPPORTED_PREPROCESSING_VERSIONS",
     "SplitRatios",
     "TextPreprocessingError",
     "assign_splits",
     "audit_manifest",
+    "build_preprocessed_records",
     "compute_text_content_hash",
     "evaluate_predictions",
     "load_manifest",
@@ -50,4 +57,5 @@ __all__ = [
     "load_predictions",
     "preprocess_turkish_text",
     "verify_dataset_content_hashes",
+    "write_private_jsonl",
 ]

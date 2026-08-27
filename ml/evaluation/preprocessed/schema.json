@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:preprocessed-text-record:v1",
+  "title": "N-Güven Preprocessed Text Record",
+  "description": "Local-only output from a versioned N-Güven text preprocessing contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "text",
+    "preprocessingVersion",
+    "inputContentHash",
+    "outputContentHash",
+    "inputCharacters",
+    "outputCharacters"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "preprocessingVersion": {
+      "type": "string",
+      "pattern": "^tr-text-v[1-9][0-9]*$"
+    },
+    "inputContentHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "outputContentHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "inputCharacters": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "outputCharacters": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

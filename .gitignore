@@ -52,6 +52,8 @@ terraform.tfplan
 # Local ML dataset inputs (schema remains tracked)
 ml/evaluation/inputs/*
 !ml/evaluation/inputs/schema.json
+ml/evaluation/preprocessed/*
+!ml/evaluation/preprocessed/schema.json
 
 # Test and coverage output
 **/TestResults/
