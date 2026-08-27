@@ -1,0 +1,71 @@
+name: AI Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "services/text-ai/**"
+      - "ml/evaluation/**"
+      - ".github/workflows/ai-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/text-ai/**"
+      - "ml/evaluation/**"
+      - ".github/workflows/ai-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Python contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            services/text-ai/pyproject.toml
+            ml/evaluation/pyproject.toml
+
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./services/text-ai[dev]" -e "./ml/evaluation[dev]"
+
+      - name: Test text AI service contracts
+        working-directory: services/text-ai
+        run: python -m pytest
+
+      - name: Test evaluation contracts
+        working-directory: ml/evaluation
+        run: python -m pytest
+
+  container:
+    name: Text AI container
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build non-root service image
+        run: docker build --tag nguven-text-ai:test services/text-ai
+
+      - name: Verify configured runtime user
+        run: |
+          runtime_user="$(docker image inspect nguven-text-ai:test --format '{{.Config.User}}')"
+          test -n "$runtime_user"
+          test "$runtime_user" != "0"
+          test "$runtime_user" != "root"

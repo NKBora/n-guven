@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nguven-evaluation"
+version = "0.1.0"
+description = "Reproducible evaluation tooling for N-Güven ML services"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "jsonschema>=4.23,<5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+]
+
+[project.scripts]
+nguven-eval = "nguven_evaluation.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nguven_evaluation"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]

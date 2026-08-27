@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:evaluation-prediction:v1",
+  "title": "N-Güven Evaluation Prediction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "predictedLabel", "score", "inferenceMs"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "predictedLabel": {
+      "type": ["string", "number", "integer", "boolean", "null"]
+    },
+    "score": {
+      "description": "Optional model score; semantics must be documented by the producing adapter.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "inferenceMs": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

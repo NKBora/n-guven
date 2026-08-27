@@ -32,6 +32,12 @@
       "minLength": 1,
       "maxLength": 512
     },
+    "sourceGroup": {
+      "description": "Stable grouping key for records originating from the same source family.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
     "sourceUrl": {
       "type": "string",
       "format": "uri",
@@ -71,6 +77,12 @@
     },
     "generatorModel": {
       "description": "Generator identifier, or null for genuinely human-generated content.",
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "generatorFamily": {
+      "description": "Optional model-family key used for generator holdout and leakage checks.",
       "type": ["string", "null"],
       "minLength": 1,
       "maxLength": 256

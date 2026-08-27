@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:evaluation-result:v1",
+  "title": "N-Güven Evaluation Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "run", "dataset", "model", "metrics", "artifacts"],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "createdAt", "gitCommit", "seed"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "createdAt": {"type": "string", "format": "date-time"},
+        "gitCommit": {"type": "string", "pattern": "^[A-Fa-f0-9]{7,64}$"},
+        "seed": {"type": "integer"}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "recordCount"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 256},
+        "recordCount": {"type": "integer", "minimum": 1}
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "version": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accuracy", "macroPrecision", "macroRecall", "macroF1", "meanInferenceMs"],
+      "properties": {
+        "accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+        "macroPrecision": {"type": "number", "minimum": 0, "maximum": 1},
+        "macroRecall": {"type": "number", "minimum": 0, "maximum": 1},
+        "macroF1": {"type": "number", "minimum": 0, "maximum": 1},
+        "meanInferenceMs": {"type": "number", "minimum": 0}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifestSha256", "predictionsSha256"],
+      "properties": {
+        "manifestSha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "predictionsSha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+      }
+    }
+  }
+}
