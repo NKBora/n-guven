@@ -8,6 +8,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
+from nguven_evaluation.dataset_inputs import (
+    DEFAULT_INPUT_SCHEMA_PATH,
+    DEFAULT_MAX_INPUT_BYTES,
+    DatasetInputError,
+    load_dataset_input,
+)
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
     EvaluationMetadata,
@@ -39,6 +45,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("manifest", type=Path)
     validate_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+
+    input_parser = subparsers.add_parser(
+        "validate-input",
+        help="validate a local-only JSON or JSON Lines text dataset input",
+    )
+    input_parser.add_argument("input", type=Path)
+    input_parser.add_argument("--schema", type=Path, default=DEFAULT_INPUT_SCHEMA_PATH)
+    input_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_INPUT_BYTES,
+    )
 
     audit_parser = subparsers.add_parser(
         "check-leakage",
@@ -84,7 +102,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        records = load_manifest(args.manifest, schema_path=args.schema)
+        if args.command == "validate-input":
+            records = load_dataset_input(
+                args.input,
+                schema_path=args.schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+        else:
+            records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "check-leakage":
             audit_manifest(
                 records,
@@ -132,6 +157,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
     except (
         DatasetLeakageError,
+        DatasetInputError,
         EvaluationInputError,
         ManifestValidationError,
         ValueError,
@@ -141,6 +167,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "validate-manifest":
         print(f"Validated {len(records)} record(s) from {args.manifest}")
+    elif args.command == "validate-input":
+        print(f"Validated {len(records)} local input record(s) from {args.input}")
     elif args.command == "check-leakage":
         print(f"Leakage checks passed for {len(records)} record(s) from {args.manifest}")
     elif args.command == "split-manifest":

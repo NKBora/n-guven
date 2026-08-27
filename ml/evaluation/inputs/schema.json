@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-dataset-input:v1",
+  "title": "N-Güven Text Dataset Input Record",
+  "description": "Local-only text content paired with a dataset manifest record identifier.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "text"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

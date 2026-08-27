@@ -1,5 +1,6 @@
 """Reproducible evaluation tooling for N-Güven ML services."""
 
+from nguven_evaluation.dataset_inputs import DatasetInputError, load_dataset_input
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
     EvaluationMetadata,
@@ -16,6 +17,7 @@ from nguven_evaluation.splitting import (
 
 __all__ = [
     "DatasetLeakageError",
+    "DatasetInputError",
     "EvaluationInputError",
     "EvaluationMetadata",
     "ManifestValidationError",
@@ -24,5 +26,6 @@ __all__ = [
     "audit_manifest",
     "evaluate_predictions",
     "load_manifest",
+    "load_dataset_input",
     "load_predictions",
 ]

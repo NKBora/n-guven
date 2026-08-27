@@ -49,6 +49,10 @@ terraform.tfplan
 **/.venv/
 *.py[cod]
 
+# Local ML dataset inputs (schema remains tracked)
+ml/evaluation/inputs/*
+!ml/evaluation/inputs/schema.json
+
 # Test and coverage output
 **/TestResults/
 **/coverage/

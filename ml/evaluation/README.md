@@ -9,6 +9,7 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 ## Implemented scope
 
 - JSON and JSON Lines dataset manifest validation against JSON Schema Draft 2020-12.
+- Strict, local-only JSON/JSONL text input validation without logging raw text.
 - Duplicate record ID and SHA-256 content-hash rejection.
 - Cross-split source and generator-family leakage checks.
 - Seeded, order-independent split assignment for connected source/generator groups.
@@ -22,6 +23,8 @@ The package does not download data or model weights, execute inference, choose a
 
 ```text
 ml/evaluation/
+├── inputs/
+│   └── schema.json
 ├── manifests/
 │   └── schema.json
 ├── predictions/
@@ -58,6 +61,14 @@ Validate a JSON or JSON Lines manifest:
 ```bash
 nguven-eval validate-manifest path/to/manifest.jsonl
 ```
+
+Validate a local text input artifact without printing raw text:
+
+```bash
+nguven-eval validate-input path/to/local-input.jsonl
+```
+
+Files placed under `ml/evaluation/inputs/` are ignored by Git except for the schema. Prefer an access-controlled path outside the repository for real evaluation content.
 
 Reject duplicate identities/content and source or generator groups spanning multiple splits:
 
