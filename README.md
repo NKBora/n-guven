@@ -4,7 +4,7 @@ N-Güven, NSosyal odaklı bir içerik güveni ve şeffaflık platformu olarak ta
 
 N-Güven **faktüel doğruluk tespiti yapmaz**, genel amaçlı bir fact-checking sistemi değildir ve içeriği otomatik olarak kaldırmaz ya da moderasyona tabi tutmaz. “İçerik özgünlüğü / üretim sinyali”, bir içeriğin nasıl üretilmiş olabileceğine ilişkin model çıktısıdır; “faktüel doğrulama” ise içerikteki iddiaların kanıtlarla doğru olup olmadığını araştırır. Bu iki problem birbirinin yerine kullanılamaz. Kamu figürü bağlamı yalnızca kontrollü bir referans galerisi ve yüksek güven eşiğiyle, sınırlı bir bağlam sinyali olarak planlanmaktadır.
 
-> **Proje durumu — başlangıç iskeleti:** Bu depo güvenli public-repository, GitHub Actions OIDC, Terraform IAM/ECR/Secrets Manager ve Kubernetes namespace/service-account temeline ek olarak Türkçe metin AI servisi için modelden bağımsız FastAPI sözleşme temelini ve tekrarlanabilir ML değerlendirme hattını içerir. Gerçek ML modeli, ASP.NET Core, Vue, PostgreSQL, RabbitMQ ve uygulama workload'ları henüz eklenmemiştir. Aşağıdaki her bölüm mevcut durum ile hedef mimariyi ayrı etiketler.
+> **Proje durumu — başlangıç iskeleti:** Bu depo güvenli public-repository, GitHub Actions OIDC, Terraform IAM/ECR/Secrets Manager ve Kubernetes namespace/service-account temeline ek olarak Türkçe metin AI servisi için modelden bağımsız FastAPI sözleşme temelini ve tekrarlanabilir ML değerlendirme hattını içerir. Gerçek ML modeli, ASP.NET Core / .NET 10 backend, Next.js + TypeScript frontend, PostgreSQL, RabbitMQ ve uygulama workload'ları henüz eklenmemiştir. Aşağıdaki her bölüm mevcut durum ile hedef mimariyi ayrı etiketler.
 
 ## İçindekiler
 
@@ -60,7 +60,7 @@ Bu hedefler proje yönünü tanımlar; bir hedefin burada yer alması uygulanmı
 | Uygulandı | EKS workload identity taslağı | EKS Pod Identity ile yalnızca üç N-Güven secret ARN'ine `GetSecretValue` izni |
 | Uygulandı | Kubernetes başlangıç kaynakları | `nguven-demo` namespace, service account ve yalnız non-sensitive ConfigMap |
 | Hazır, apply edilmedi | ECR, IAM, Secrets Manager ve EKS erişim kaynakları | Terraform tanımları vardır; canlı AWS hesabına uygulanmamıştır |
-| Planlanan | Vue 3 frontend ve ASP.NET Core backend | Sorumluluk dizinleri boştur; çalıştırılabilir proje yoktur |
+| Planlanan | Next.js + TypeScript frontend ve ASP.NET Core / .NET 10 backend | Sorumluluk dizinleri boştur; çalıştırılabilir proje yoktur |
 | Planlanan | PostgreSQL, RabbitMQ/Amazon MQ | Uygulama ve deployment tanımları henüz yoktur |
 | Uygulandı, model yok | Türkçe metin AI servis temeli | Typed FastAPI sözleşmeleri, deterministik yapılandırılmamış inference adaptörü, pytest sözleşme testleri ve non-root Dockerfile |
 | Uygulandı, sonuç yok | ML değerlendirme hattı | Manifest/tahmin/sonuç şemaları, duplicate ve leakage kontrolleri, deterministik split, modelden bağımsız metrik hesaplama ve pytest testleri |
@@ -82,8 +82,8 @@ flowchart LR
     K8S[Kubernetes baseline\nUygulandı]
 
     U[NSosyal Kullanıcısı\nPlanlanan]
-    UI[Vue 3 Web UI\nPlanlanan]
-    API[ASP.NET Core API\nPlanlanan]
+    UI[Next.js + TypeScript Web UI\nPlanlanan]
+    API[ASP.NET Core / .NET 10 API\nPlanlanan]
     DB[(PostgreSQL\nPlanlanan)]
     MQ[RabbitMQ / Amazon MQ\nPlanlanan]
     TXT[Text AI Service\nPlanlanan]
@@ -116,8 +116,8 @@ Aşağıdaki akış hedef tasarımdır; henüz çalışır bir uygulama implemen
 ```mermaid
 sequenceDiagram
     actor User as Kullanıcı
-    participant UI as Vue UI
-    participant API as ASP.NET Core API
+    participant UI as Next.js UI
+    participant API as ASP.NET Core / .NET 10 API
     participant DB as PostgreSQL
     participant MQ as RabbitMQ
     participant AI as İlgili AI Worker
@@ -145,8 +145,8 @@ n-guven/
 │   ├── deploy-eks.yml
 │   └── security.yml
 ├── apps/
-│   ├── backend/                 # Planlanan ASP.NET Core uygulaması
-│   └── web/                     # Planlanan Vue uygulaması
+│   ├── backend/                 # Planlanan ASP.NET Core / .NET 10 uygulaması
+│   └── web/                     # Planlanan Next.js + TypeScript uygulaması
 ├── services/
 │   ├── text-ai/                 # FastAPI sözleşme temeli; model yüklenmez
 │   ├── image-ai/                # Planlanan görsel servisi
@@ -190,19 +190,19 @@ Her commit kendi teknik amacıyla incelenebilir; runtime secret, canlı AWS değ
 
 ## Frontend
 
-**Durum: Planlanan.** `apps/web/` içinde henüz `package.json`, Vue bileşeni, test veya Dockerfile yoktur.
+**Durum: Planlanan.** `apps/web/` içinde henüz `package.json`, Next.js sayfası/bileşeni, test veya Dockerfile yoktur.
 
-Hedef frontend yığını Vue 3, TypeScript ve Vite'tır. Feed, içerik detayı, AI analiz rozeti, analiz açıklaması, semantik güven seviyesi, kontrollü kamu figürü bağlamı, kullanıcı geri bildirimi ve admin analitiği bu katmanın sorumluluğunda olacaktır. Ham model olasılığının ana kullanıcı sinyali olması yerine, kalibre edilmiş seviye ve belirsizlik açıklaması tercih edilecektir.
+Hedef frontend yığını Next.js ve TypeScript'tir. Feed, içerik detayı, AI analiz rozeti, analiz açıklaması, semantik güven seviyesi, kontrollü kamu figürü bağlamı, kullanıcı geri bildirimi ve admin analitiği bu katmanın sorumluluğunda olacaktır. Ham model olasılığının ana kullanıcı sinyali olması yerine, kalibre edilmiş seviye ve belirsizlik açıklaması tercih edilecektir.
 
 Erişilebilirlik yaklaşımı; semantik HTML, klavye navigasyonu, görünür focus, yalnız renge dayanmayan ikon + metin iletişimi, yeterli kontrast, screen-reader etiketleri ve mobil touch target'ları kapsayacaktır. WCAG 2.2 henüz doğrulanmış uyumluluk değil, tasarım hedefidir.
 
-> `VITE_*` değişkenleri istemci bundle'ına giren **public yapılandırmadır**. Token, parola, JWT signing key veya başka bir server-side secret hiçbir zaman `VITE_*` değişkeninde tutulmamalıdır.
+> `NEXT_PUBLIC_*` değişkenleri istemci bundle'ına giren **public yapılandırmadır**. Token, parola, JWT signing key veya başka bir server-side secret hiçbir zaman `NEXT_PUBLIC_*` değişkeninde tutulmamalıdır.
 
 ## Backend
 
 **Durum: Planlanan.** `apps/backend/` içinde `.sln`, `.csproj`, controller/Minimal API, veri erişimi veya test projesi yoktur; bu nedenle Clean Architecture, MediatR, EF Core ya da başka bir yaklaşım uygulanmış gibi iddia edilmez.
 
-Hedef teknoloji .NET 8 ve ASP.NET Core'dur. Backend'in planlanan sorumlulukları içerik/feed yönetimi, analiz orchestration, queue publishing, analiz sonucu sorgulama, feedback, admin/analytics iş kuralları, health endpoint'leri ve gözlemlenebilirliktir. Katman sınırları gerçek kodla birlikte belirlenecek ve bu bölüm uygulamaya göre güncellenecektir.
+Hedef teknoloji ASP.NET Core / .NET 10'dur. Backend'in planlanan sorumlulukları içerik/feed yönetimi, analiz orchestration, queue publishing, analiz sonucu sorgulama, feedback, admin/analytics iş kuralları, health endpoint'leri ve gözlemlenebilirliktir. Katman sınırları gerçek kodla birlikte belirlenecek ve bu bölüm uygulamaya göre güncellenecektir.
 
 ## Veri Katmanı
 
@@ -646,7 +646,7 @@ CPU yerine GPU zorunluluğu yaratmamak, minimum replica, kısa aktif test pencer
 
 ## API
 
-**Durum: Text AI sözleşmesi mevcut; application API planlanmaktadır.** FastAPI `GET /health` ve `POST /v1/analyze/text` endpoint'lerini, `/docs` altında üretilen OpenAPI arayüzüyle sunar. Mevcut analiz endpoint'i gerçek model skoru üretmez. Content, Feedback, Analytics ve Admin grupları ASP.NET Core uygulaması eklendiğinde belgelenecektir.
+**Durum: Text AI sözleşmesi mevcut; application API planlanmaktadır.** FastAPI `GET /health` ve `POST /v1/analyze/text` endpoint'lerini, `/docs` altında üretilen OpenAPI arayüzüyle sunar. Mevcut analiz endpoint'i gerçek model skoru üretmez. Content, Feedback, Analytics ve Admin grupları ASP.NET Core / .NET 10 uygulaması eklendiğinde belgelenecektir.
 
 ## Lisanslar ve Model Kullanımı
 
@@ -687,8 +687,8 @@ Model ağırlıkları repository'de yoktur. Her model için source, weight licen
 
 ## Yol Haritası
 
-1. ASP.NET Core backend ve PostgreSQL migration temeli.
-2. Vue 3/TypeScript/Vite feed, analiz detayı ve erişilebilirlik bileşenleri.
+1. ASP.NET Core / .NET 10 backend ve PostgreSQL migration temeli.
+2. Next.js + TypeScript feed, analiz detayı ve erişilebilirlik bileşenleri.
 3. Local PostgreSQL + RabbitMQ Docker Compose ve typed message contracts.
 4. Türkçe text AI baseline, source-separated evaluation ve calibration.
 5. Görsel detector baseline ve JPEG/resize/crop/screenshot robustness testleri.
@@ -710,10 +710,10 @@ Model ağırlıkları repository'de yoktur. Her model için source, weight licen
 
 ### Hakan Yaman
 
-- ASP.NET Core backend, application API'leri ve PostgreSQL veri katmanı,
+- ASP.NET Core / .NET 10 backend, application API'leri ve PostgreSQL veri katmanı,
 - content/feed backend, business rules ve analiz orchestration,
 - RabbitMQ application integration, analysis result/feedback ve admin/analytics backend,
-- Vue 3 frontend; feed, content detail, analysis result ve admin dashboard UI,
+- Next.js + TypeScript frontend; feed, content detail, analysis result ve admin dashboard UI,
 - kullanıcı feedback akışları, frontend/backend entegrasyonu ve UI/UX implementasyonu.
 
 Bu dağılım hedef sorumluluk sınırlarını gösterir; boş uygulama dizinlerini tamamlanmış iş olarak göstermez.
