@@ -11,6 +11,7 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - JSON and JSON Lines dataset manifest validation against JSON Schema Draft 2020-12.
 - Strict, local-only JSON/JSONL text input validation without logging raw text.
 - One-to-one manifest/input coverage and SHA-256 verification over exact UTF-8 text bytes.
+- Versioned Turkish text preprocessing with NFC Unicode and LF newline normalization.
 - Duplicate record ID and SHA-256 content-hash rejection.
 - Cross-split source and generator-family leakage checks.
 - Seeded, order-independent split assignment for connected source/generator groups.
@@ -79,6 +80,12 @@ nguven-eval verify-content-hashes path/to/manifest.jsonl \
 ```
 
 For text records, `contentHash` is `sha256:` followed by the lowercase SHA-256 digest of the exact decoded text encoded as UTF-8. Normalization is intentionally not applied at this integrity stage; versioned preprocessing is a separate step.
+
+## Turkish text preprocessing
+
+The initial `tr-text-v1` contract removes one leading Unicode BOM, normalizes CRLF/CR line endings to LF, and applies NFC Unicode normalization. It rejects NUL characters and text that becomes empty.
+
+Case, Turkish dotted/dotless I, punctuation, internal spacing, and leading/trailing whitespace are preserved because these may carry useful generation signals. The pipeline deliberately does not lowercase, collapse whitespace, tokenize, truncate, or apply model-specific transformations.
 
 Reject duplicate identities/content and source or generator groups spanning multiple splits:
 

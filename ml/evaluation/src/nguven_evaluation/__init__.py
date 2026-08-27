@@ -14,6 +14,13 @@ from nguven_evaluation.integrity import (
     verify_dataset_content_hashes,
 )
 from nguven_evaluation.manifests import ManifestValidationError, load_manifest
+from nguven_evaluation.preprocessing import (
+    DEFAULT_PREPROCESSING_VERSION,
+    SUPPORTED_PREPROCESSING_VERSIONS,
+    PreprocessedText,
+    TextPreprocessingError,
+    preprocess_turkish_text,
+)
 from nguven_evaluation.splitting import (
     DatasetLeakageError,
     SplitRatios,
@@ -25,11 +32,15 @@ __all__ = [
     "DatasetLeakageError",
     "DatasetInputError",
     "DatasetIntegrityError",
+    "DEFAULT_PREPROCESSING_VERSION",
     "EvaluationInputError",
     "EvaluationMetadata",
     "IntegrityReport",
     "ManifestValidationError",
+    "PreprocessedText",
+    "SUPPORTED_PREPROCESSING_VERSIONS",
     "SplitRatios",
+    "TextPreprocessingError",
     "assign_splits",
     "audit_manifest",
     "compute_text_content_hash",
@@ -37,5 +48,6 @@ __all__ = [
     "load_manifest",
     "load_dataset_input",
     "load_predictions",
+    "preprocess_turkish_text",
     "verify_dataset_content_hashes",
 ]
