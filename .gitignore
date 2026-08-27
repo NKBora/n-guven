@@ -55,6 +55,15 @@ ml/evaluation/inputs/*
 ml/evaluation/preprocessed/*
 !ml/evaluation/preprocessed/schema.json
 
+# Local ML model weights and caches (contracts remain tracked)
+ml/evaluation/models/artifacts/
+ml/evaluation/models/cache/
+ml/evaluation/models/**/*.safetensors
+ml/evaluation/models/**/*.onnx
+ml/evaluation/models/**/*.bin
+ml/evaluation/models/**/*.pt
+ml/evaluation/models/**/*.pth
+
 # Test and coverage output
 **/TestResults/
 **/coverage/

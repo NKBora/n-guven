@@ -18,6 +18,8 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - Offline prediction validation and complete manifest-to-prediction coverage checks.
 - Accuracy, macro precision, macro recall, macro F1, and mean inference-time calculation.
 - Traceable result artifacts containing the dataset/model versions, Git commit, seed, creation time, and input hashes.
+- Strict model artifact provenance and local SHA-256 verification without network downloads.
+- A shared adapter boundary for pinned BERTurk and ModernBERT-TR upstream candidates.
 
 The package does not download data or model weights, execute inference, choose a model, or establish production thresholds.
 
@@ -28,6 +30,8 @@ ml/evaluation/
 ├── inputs/
 │   └── schema.json
 ├── manifests/
+│   └── schema.json
+├── models/
 │   └── schema.json
 ├── preprocessed/
 │   └── schema.json
@@ -43,7 +47,13 @@ ml/evaluation/
 └── pyproject.toml
 ```
 
-`scripts/` remains reserved for future approved model adapters. Generated result files belong under `results/` but must not be described as project evidence until their dataset and protocol have been reviewed.
+Generated result files belong under `results/` but must not be described as project evidence until their dataset and protocol have been reviewed.
+
+## Model artifact and adapter boundary
+
+`models/schema.json` records immutable upstream model and tokenizer revisions, separate weight/code licenses, the required preprocessing version, runtime details, label mapping, artifact sizes, and SHA-256 hashes. Local weights and caches under `models/` are ignored by Git.
+
+The initial adapter registry pins the reviewed upstream identities of `dbmdz/bert-base-turkish-cased` and `ytu-ce-cosmos/modernbert-tr-base`. Their presence is a candidate declaration, not an integration, benchmark result, production approval, or final model selection. Adapters accept only a locally supplied inference backend and never download code or weights.
 
 ## Local setup
 
