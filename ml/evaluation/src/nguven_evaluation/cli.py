@@ -21,6 +21,10 @@ from nguven_evaluation.evaluation import (
     load_predictions,
     sha256_file,
 )
+from nguven_evaluation.integrity import (
+    DatasetIntegrityError,
+    verify_dataset_content_hashes,
+)
 from nguven_evaluation.manifests import (
     DEFAULT_SCHEMA_PATH,
     ManifestValidationError,
@@ -53,6 +57,24 @@ def build_parser() -> argparse.ArgumentParser:
     input_parser.add_argument("input", type=Path)
     input_parser.add_argument("--schema", type=Path, default=DEFAULT_INPUT_SCHEMA_PATH)
     input_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_INPUT_BYTES,
+    )
+
+    integrity_parser = subparsers.add_parser(
+        "verify-content-hashes",
+        help="verify local text content against manifest SHA-256 hashes",
+    )
+    integrity_parser.add_argument("manifest", type=Path)
+    integrity_parser.add_argument("--input", type=Path, required=True)
+    integrity_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    integrity_parser.add_argument(
+        "--input-schema",
+        type=Path,
+        default=DEFAULT_INPUT_SCHEMA_PATH,
+    )
+    integrity_parser.add_argument(
         "--max-file-bytes",
         type=int,
         default=DEFAULT_MAX_INPUT_BYTES,
@@ -110,7 +132,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
-        if args.command == "check-leakage":
+        if args.command == "verify-content-hashes":
+            input_records = load_dataset_input(
+                args.input,
+                schema_path=args.input_schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+            integrity_report = verify_dataset_content_hashes(records, input_records)
+        elif args.command == "check-leakage":
             audit_manifest(
                 records,
                 group_dimensions=args.group_by or DEFAULT_GROUP_DIMENSIONS,
@@ -158,6 +187,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (
         DatasetLeakageError,
         DatasetInputError,
+        DatasetIntegrityError,
         EvaluationInputError,
         ManifestValidationError,
         ValueError,
@@ -169,6 +199,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Validated {len(records)} record(s) from {args.manifest}")
     elif args.command == "validate-input":
         print(f"Validated {len(records)} local input record(s) from {args.input}")
+    elif args.command == "verify-content-hashes":
+        print(
+            f"Verified {integrity_report.verified_record_count} content hash(es) "
+            f"from {args.manifest}"
+        )
     elif args.command == "check-leakage":
         print(f"Leakage checks passed for {len(records)} record(s) from {args.manifest}")
     elif args.command == "split-manifest":
