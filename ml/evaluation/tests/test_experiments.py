@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from copy import deepcopy
 from pathlib import Path
 
@@ -34,16 +35,29 @@ def shared_plan() -> dict:
     }
 
 
-def test_berturk_experiment_is_ready_without_claiming_results() -> None:
+def test_berturk_experiment_records_completed_validation_runs() -> None:
     specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
     benchmark = load_benchmark_lock()
 
     validate_experiment_inputs(specification, plan=shared_plan(), benchmark=benchmark)
     assert specification["adapterId"] == "berturk"
     assert specification["protocol"]["seeds"] == [17, 42, 71]
-    assert specification["execution"]["status"] == "ready"
-    assert specification["execution"]["resultArtifact"] is None
-    assert experiment_execution_allowed(specification, benchmark) is True
+    assert specification["execution"]["status"] == "completed"
+    assert specification["execution"]["resultArtifact"]["runCount"] == 3
+    assert experiment_execution_allowed(specification, benchmark) is False
+
+
+def test_berturk_evidence_matches_completed_experiment_hash() -> None:
+    specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    evidence_path = DEFAULT_BERTURK_EXPERIMENT_PATH.parent / "evidence" / "berturk-v1.json"
+    evidence_bytes = evidence_path.read_bytes()
+    evidence = json.loads(evidence_bytes)
+
+    assert hashlib.sha256(evidence_bytes).hexdigest() == specification["execution"][
+        "resultArtifact"
+    ]["sha256"]
+    assert {item["seed"] for item in evidence["selection"]} == {17, 42, 71}
+    assert evidence["testSplitAccessed"] is False
 
 
 def test_berturk_experiment_rejects_upstream_drift(tmp_path: Path) -> None:
@@ -58,7 +72,7 @@ def test_berturk_experiment_rejects_upstream_drift(tmp_path: Path) -> None:
 
 
 def test_execution_requires_reviewed_materialized_benchmark() -> None:
-    specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    specification = load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH)
     benchmark = load_benchmark_lock()
     benchmark = deepcopy(benchmark)
     benchmark["release"]["evidenceStatus"] = "not-materialized"

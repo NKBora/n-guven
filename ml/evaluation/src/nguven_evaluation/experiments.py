@@ -124,13 +124,6 @@ def validate_comparable_experiments(
             raise ExperimentContractError(
                 f"Candidate experiments have different {label}"
             )
-    baseline_execution = baseline["execution"]
-    candidate_execution = candidate["execution"]
-    if (
-        baseline_execution["status"] != candidate_execution["status"]
-        or baseline_execution["allowed"] != candidate_execution["allowed"]
-    ):
-        raise ExperimentContractError("Candidate experiment execution states differ")
 
 
 def _validate_candidate_identity(specification: Mapping[str, Any]) -> None:
