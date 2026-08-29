@@ -57,6 +57,12 @@ from nguven_evaluation.integrity import (
     DatasetIntegrityError,
     verify_dataset_content_hashes,
 )
+from nguven_evaluation.inference_data import (
+    InferenceDataError,
+    prepare_inference_split,
+    sha256_file as inference_sha256,
+    write_private_inference_split,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -292,6 +298,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     readiness_parser.add_argument("--ontology", type=Path, default=DEFAULT_ONTOLOGY_PATH)
 
+    inference_data_parser = subparsers.add_parser(
+        "prepare-inference-split",
+        help="materialize an aligned validation or completion-gated frozen test split",
+    )
+    inference_data_parser.add_argument("manifest", type=Path)
+    inference_data_parser.add_argument("--preprocessed", type=Path, required=True)
+    inference_data_parser.add_argument(
+        "--split", required=True, choices=("validation", "test")
+    )
+    inference_data_parser.add_argument("--experiment", type=Path, action="append")
+    inference_data_parser.add_argument("--output", type=Path, required=True)
+    inference_data_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    inference_data_parser.add_argument(
+        "--preprocessed-schema",
+        type=Path,
+        default=DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    )
+
     train_parser = subparsers.add_parser(
         "train-text-model",
         help="run linear-probe and fine-tuning stages without access to test data",
@@ -523,6 +547,27 @@ def main(argv: Sequence[str] | None = None) -> int:
                 record_schema_path=args.record_schema,
             )
             write_private_finetuning_package(readiness_package, args.output)
+        elif args.command == "prepare-inference-split":
+            records = load_manifest(args.manifest, schema_path=args.schema)
+            preprocessed_records = load_preprocessed_records(
+                args.preprocessed,
+                schema_path=args.preprocessed_schema,
+            )
+            experiments = [
+                load_experiment_spec(path) for path in (args.experiment or [])
+            ]
+            inference_package = prepare_inference_split(
+                records,
+                preprocessed_records,
+                split=args.split,
+                experiments=experiments,
+            )
+            inference_provenance = write_private_inference_split(
+                inference_package,
+                args.output,
+                source_manifest_sha256=inference_sha256(args.manifest),
+                source_preprocessed_sha256=inference_sha256(args.preprocessed),
+            )
         elif args.command == "train-text-model":
             training_plan = load_finetuning_plan(args.plan)
             experiment_specification = load_experiment_spec(args.experiment)
@@ -707,6 +752,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         EvaluationInputError,
         ExperimentContractError,
         FineTuningReadinessError,
+        InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
         ModelArtifactError,
@@ -753,6 +799,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Prepared {readiness_package.summary['recordCount']} fine-tuning record(s) "
             f"with an isolated test split at {args.output}"
+        )
+    elif args.command == "prepare-inference-split":
+        print(
+            f"Prepared {inference_provenance['recordCount']} {args.split} inference "
+            f"record(s) at {args.output}"
         )
     elif args.command == "train-text-model":
         print(

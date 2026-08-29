@@ -41,6 +41,12 @@ from nguven_evaluation.integrity import (
     compute_text_content_hash,
     verify_dataset_content_hashes,
 )
+from nguven_evaluation.inference_data import (
+    InferenceDataError,
+    PreparedInferenceSplit,
+    prepare_inference_split,
+    write_private_inference_split,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -119,6 +125,7 @@ __all__ = [
     "ExperimentContractError",
     "FineTuningReadinessError",
     "IntegrityReport",
+    "InferenceDataError",
     "ManifestValidationError",
     "MODERNBERT_TR",
     "ModelAdapterError",
@@ -129,6 +136,7 @@ __all__ = [
     "OfflinePredictionError",
     "PreprocessedText",
     "PreparedFineTuningPackage",
+    "PreparedInferenceSplit",
     "SUPPORTED_PREPROCESSING_VERSIONS",
     "SplitRatios",
     "TextPreprocessingError",
@@ -167,6 +175,7 @@ __all__ = [
     "load_preprocessed_records",
     "preprocess_turkish_text",
     "prepare_finetuning_package",
+    "prepare_inference_split",
     "predicted_synthetic_probability",
     "package_finetuned_model",
     "verify_dataset_content_hashes",
@@ -176,6 +185,7 @@ __all__ = [
     "temperature_scale",
     "write_private_jsonl",
     "write_private_finetuning_package",
+    "write_private_inference_split",
     "write_private_predictions",
     "write_comparison_report",
     "write_model_manifest",
