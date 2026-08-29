@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "evidenceType": "calibrated-frozen-test-comparison",
+  "planId": "text-origin-tr-v1",
+  "evaluationGitCommit": "01776148f980922377eb2b5f5919533add38c932",
+  "dataset": {
+    "version": "text-origin-tr-v1",
+    "recordCount": 1200,
+    "testManifestSha256": "ab279787f8e4bf064ccdbb22bd050869c7b80da1a33dcae94aa123c618684e3e",
+    "testPreprocessedSha256": "37c98120b567865362e805e03580831e3e6458ed1c200d3121f31b8e89a3457b",
+    "validationManifestSha256": "b8c01213f5914ab1dc0dcab9a50ac52724d9ceef0f0905b09d51bd4836b1c5e7"
+  },
+  "comparison": {
+    "path": "../../comparisons/text-origin-tr-v1.json",
+    "sha256": "f018d0bab6f01b395de9bdb9856cff1d1932183edaf0b6b1703fd8eb8855511f",
+    "selectionStatus": "selected",
+    "leader": "berturk"
+  },
+  "resultArtifacts": [
+    {"adapterId": "berturk", "seed": 17, "sha256": "a985ce29db41729e861ce67591d362a6ec359961c502d22ef557be9193950ba2"},
+    {"adapterId": "berturk", "seed": 42, "sha256": "72546a07150c907b21abce31fa04d43463bf05db3391c9beff97f67c63ff1058"},
+    {"adapterId": "berturk", "seed": 71, "sha256": "71c0611563f5252f9f49d5f2bfc82d2ad7b94cc2dc6c8553ec22c06fcb346460"},
+    {"adapterId": "modernbert-tr", "seed": 17, "sha256": "4757e07ce58668d7e668ad623b53d6c4a469e48ee5e7966d1ace2841162acedf"},
+    {"adapterId": "modernbert-tr", "seed": 42, "sha256": "3d3e91940b4626beb7fbe4176358868e932ebb62566ad62f9b1c29e0cd839bd9"},
+    {"adapterId": "modernbert-tr", "seed": 71, "sha256": "3064f940532e58edde7a03a5064896e11d7a7dec856c7df523b80834bc06eb60"}
+  ],
+  "calibrationArtifacts": [
+    {"adapterId": "berturk", "seed": 17, "sha256": "f6003a11f0f0d66edb72594d49a7a4e97aea4f0bb099b6bf904fd44c5784c3ce"},
+    {"adapterId": "berturk", "seed": 42, "sha256": "58dd8417485a6e34748c6883bba8f0c5a11dcdd1e3d165f5726567d185b90bf1"},
+    {"adapterId": "berturk", "seed": 71, "sha256": "c2d797f2789f4e160b5f7bea692e1c6b10d24ba61e4de6ce5faced77ea955da5"},
+    {"adapterId": "modernbert-tr", "seed": 17, "sha256": "4a6d7a8c18071b58b3f76d159f37536baa4ed0ac6db94a23f5518ba11425b25f"},
+    {"adapterId": "modernbert-tr", "seed": 42, "sha256": "2f6c4c0a2a61884ea1a0b829052e93a414069b53a8612be6e36d10dc94bac010"},
+    {"adapterId": "modernbert-tr", "seed": 71, "sha256": "257b4886ad1ba465df56818fbe1e637c09506e3782f13ee0d764d4e44bc228a2"}
+  ],
+  "testSplitAccessed": true,
+  "limitations": [
+    "The benchmark distinguishes reviewed source families and does not establish unseen-domain generalization.",
+    "Near-perfect scores can reflect source-style shortcuts; production approval requires adversarial and external-domain evidence."
+  ]
+}

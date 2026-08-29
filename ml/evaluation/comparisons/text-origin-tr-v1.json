@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "1.0",
+  "createdAt": "2026-08-29T17:54:19.874430Z",
+  "planId": "text-origin-tr-v1",
+  "dataset": {
+    "version": "text-origin-tr-v1",
+    "recordCount": 1200,
+    "manifestSha256": "ab279787f8e4bf064ccdbb22bd050869c7b80da1a33dcae94aa123c618684e3e"
+  },
+  "protocol": {
+    "seeds": [
+      17,
+      42,
+      71
+    ],
+    "primaryMetric": "macroF1",
+    "tieBreakers": [
+      "accuracy",
+      "meanInferenceMs"
+    ]
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "adapterId": "berturk",
+      "modelVersion": "text-origin-tr-v1",
+      "runIds": [
+        "berturk-test-seed-17",
+        "berturk-test-seed-42",
+        "berturk-test-seed-71"
+      ],
+      "metrics": {
+        "accuracy": {
+          "mean": 0.9997222222222222,
+          "populationStdDev": 0.00039283710065920216,
+          "confidence95Low": 0.9985269444444443,
+          "confidence95High": 1.0009175
+        },
+        "macroPrecision": {
+          "mean": 0.9997226844148641,
+          "populationStdDev": 0.0003921834615565984,
+          "confidence95Low": 0.9985293954520245,
+          "confidence95High": 1.0009159733777038
+        },
+        "macroRecall": {
+          "mean": 0.9997222222222222,
+          "populationStdDev": 0.00039283710065920216,
+          "confidence95Low": 0.9985269444444443,
+          "confidence95High": 1.0009175
+        },
+        "macroF1": {
+          "mean": 0.9997222220293208,
+          "populationStdDev": 0.00039283737346292383,
+          "confidence95Low": 0.9985269434214884,
+          "confidence95High": 1.0009175006371531
+        },
+        "meanInferenceMs": {
+          "mean": 38.412032601944446,
+          "populationStdDev": 0.5210657510425113,
+          "confidence95Low": 36.82659601273968,
+          "confidence95High": 39.997469191149214
+        },
+        "prAuc": {
+          "mean": 1.0,
+          "populationStdDev": 0.0,
+          "confidence95Low": 1.0,
+          "confidence95High": 1.0
+        },
+        "brierScore": {
+          "mean": 0.00014670082865912977,
+          "populationStdDev": 0.0002074058712758343,
+          "confidence95Low": 0.0,
+          "confidence95High": 0.0007777706245125413
+        },
+        "ece": {
+          "mean": 0.0005095037553186428,
+          "populationStdDev": 0.0005486296453887091,
+          "confidence95Low": 0.0,
+          "confidence95High": 0.002178808467788092
+        },
+        "highConfidenceFalsePositiveRate": {
+          "mean": 0.0,
+          "populationStdDev": 0.0,
+          "confidence95Low": 0.0,
+          "confidence95High": 0.0
+        },
+        "p95InferenceMs": {
+          "mean": 45.81615299999999,
+          "populationStdDev": 0.5580069561937975,
+          "confidence95Low": 44.1183161269942,
+          "confidence95High": 47.513989873005784
+        }
+      },
+      "predictionArtifacts": [
+        "7f7769e0af92e01c25e1ef399d6e114937e434ebbbfd2b609096d85036aa3f8c",
+        "2a76ddab930583d17fdcf0b25c236daf50a1490047019c9489246fc9af07df9f",
+        "79657fb99c0397f4a0ec3f9c747e7e5b36ae485ccfcf524ef74dae50849a5693"
+      ]
+    },
+    {
+      "rank": 2,
+      "adapterId": "modernbert-tr",
+      "modelVersion": "text-origin-tr-v1",
+      "runIds": [
+        "modernbert-tr-test-seed-17",
+        "modernbert-tr-test-seed-42",
+        "modernbert-tr-test-seed-71"
+      ],
+      "metrics": {
+        "accuracy": {
+          "mean": 0.9997222222222222,
+          "populationStdDev": 0.00039283710065920216,
+          "confidence95Low": 0.9985269444444443,
+          "confidence95High": 1.0009175
+        },
+        "macroPrecision": {
+          "mean": 0.9997226844148641,
+          "populationStdDev": 0.0003921834615565984,
+          "confidence95Low": 0.9985293954520245,
+          "confidence95High": 1.0009159733777038
+        },
+        "macroRecall": {
+          "mean": 0.9997222222222222,
+          "populationStdDev": 0.00039283710065920216,
+          "confidence95Low": 0.9985269444444443,
+          "confidence95High": 1.0009175
+        },
+        "macroF1": {
+          "mean": 0.9997222220293208,
+          "populationStdDev": 0.00039283737346292383,
+          "confidence95Low": 0.9985269434214884,
+          "confidence95High": 1.0009175006371531
+        },
+        "meanInferenceMs": {
+          "mean": 55.243728205000004,
+          "populationStdDev": 0.9063213172868864,
+          "confidence95Low": 52.48608202478567,
+          "confidence95High": 58.00137438521434
+        },
+        "prAuc": {
+          "mean": 0.9999990756147165,
+          "populationStdDev": 1.307278204893484e-06,
+          "confidence95Low": 0.9999950979848412,
+          "confidence95High": 1.0000030532445916
+        },
+        "brierScore": {
+          "mean": 0.00036477847890863867,
+          "populationStdDev": 0.0003306128199089253,
+          "confidence95Low": 0.0,
+          "confidence95High": 0.0013707276523000271
+        },
+        "ece": {
+          "mean": 0.0010320736743153836,
+          "populationStdDev": 0.0006681211135770204,
+          "confidence95Low": 0.0,
+          "confidence95High": 0.0030649527445017165
+        },
+        "highConfidenceFalsePositiveRate": {
+          "mean": 0.0005555555555555556,
+          "populationStdDev": 0.0007856742013183862,
+          "confidence95Low": 0.0,
+          "confidence95High": 0.0029461111111111116
+        },
+        "p95InferenceMs": {
+          "mean": 66.26447233333333,
+          "populationStdDev": 1.4595290081758852,
+          "confidence95Low": 61.8235919109718,
+          "confidence95High": 70.70535275569486
+        }
+      },
+      "predictionArtifacts": [
+        "4d2c337bc5a155fc00d82d671ac6ea1573fd06057e379103164d3525a13c9b8a",
+        "cadc9ec3239fd2a497cfb9aeca2c7b75efea8aa157f5182d2f6f6701cc920c09",
+        "af1b386e69dde1392a0e92663ae08653e967fb918c5ef6aeed9351d765592a04"
+      ]
+    }
+  ],
+  "selection": {
+    "status": "selected",
+    "leaders": [
+      "berturk"
+    ]
+  },
+  "acceptance": {
+    "targets": {
+      "minimumMacroF1": 0.8,
+      "maximumHighConfidenceFalsePositiveRate": 0.05,
+      "maximumP95LatencyMs": 3000.0
+    },
+    "candidates": [
+      {
+        "adapterId": "berturk",
+        "status": "passed",
+        "checks": {
+          "macroF1": true,
+          "highConfidenceFalsePositiveRate": true,
+          "p95InferenceMs": true
+        }
+      },
+      {
+        "adapterId": "modernbert-tr",
+        "status": "passed",
+        "checks": {
+          "macroF1": true,
+          "highConfidenceFalsePositiveRate": true,
+          "p95InferenceMs": true
+        }
+      }
+    ]
+  }
+}
