@@ -73,6 +73,12 @@ def test_berturk_experiment_rejects_upstream_drift(tmp_path: Path) -> None:
 
 def test_execution_requires_reviewed_materialized_benchmark() -> None:
     specification = load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH)
+    specification = deepcopy(specification)
+    specification["execution"] = {
+        "status": "ready",
+        "allowed": True,
+        "resultArtifact": None,
+    }
     benchmark = load_benchmark_lock()
     benchmark = deepcopy(benchmark)
     benchmark["release"]["evidenceStatus"] = "not-materialized"
@@ -102,6 +108,25 @@ def test_modernbert_experiment_is_pinned_to_reviewed_identity() -> None:
     assert specification["adapterId"] == "modernbert-tr"
     assert specification["upstream"]["revision"] == MODERNBERT_TR.revision
     assert specification["protocol"]["seeds"] == [17, 42, 71]
+    assert specification["execution"]["status"] == "completed"
+    assert specification["execution"]["resultArtifact"]["runCount"] == 3
+
+
+def test_modernbert_evidence_matches_completed_experiment_hash() -> None:
+    specification = load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH)
+    evidence_path = (
+        DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH.parent
+        / "evidence"
+        / "modernbert-tr-v1.json"
+    )
+    evidence_bytes = evidence_path.read_bytes()
+    evidence = json.loads(evidence_bytes)
+
+    assert hashlib.sha256(evidence_bytes).hexdigest() == specification["execution"][
+        "resultArtifact"
+    ]["sha256"]
+    assert {item["seed"] for item in evidence["selection"]} == {17, 42, 71}
+    assert evidence["testSplitAccessed"] is False
 
 
 def test_candidate_experiments_are_strictly_comparable() -> None:

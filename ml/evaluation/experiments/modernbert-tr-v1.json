@@ -21,8 +21,11 @@
     "maximumP95LatencyMs": 3000
   },
   "execution": {
-    "status": "ready",
-    "allowed": true,
-    "resultArtifact": null
+    "status": "completed",
+    "allowed": false,
+    "resultArtifact": {
+      "sha256": "85e82d64956df0c828b8216891ec62f4400592c8a7e96e5d6211b7f859de881a",
+      "runCount": 3
+    }
   }
 }

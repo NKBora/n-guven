@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0",
+  "evidenceType": "validation-only-training-execution",
+  "runId": "modernbert-tr-text-origin-v1",
+  "planId": "text-origin-tr-v1",
+  "planSha256": "43cbdbb695a4ff6ac1d3c18cee7c04a41a47546a465db61b34da4eb5656aea1d",
+  "adapterId": "modernbert-tr",
+  "experiment": {
+    "experimentId": "modernbert-tr-text-origin-v1",
+    "sha256": "def3214a53edcbfdd766a6e9ac95350e3b81ddfaff1908dd20fea8ced11dca94"
+  },
+  "benchmark": {
+    "benchmarkId": "text-origin-tr",
+    "version": "v1",
+    "manifestSha256": "92f0ce2a53a41b1b8e793582b851817bb6d182c61e026a3adcb2cb755badbb2a",
+    "preprocessedSha256": "bf46915e2f67bd70fe583f7ceeeae8c296c2337a6b7e5a0a87e849b1e07d806f"
+  },
+  "environment": {
+    "environmentId": "m2-pro-mps-v1",
+    "sha256": "69afc852af5005269861e05046f0092d1df0c2185c714b1d2195379bbd0a2421",
+    "device": "mps"
+  },
+  "upstream": {
+    "repository": "ytu-ce-cosmos/modernbert-tr-base",
+    "revision": "d16b9da8f7dc0eadf8946255ee5f38042bdf59c2"
+  },
+  "gitCommit": "e568b7acd8547dceb3b9d5adabd393179fbce247",
+  "stages": [
+    {
+      "stage": "linear-probe",
+      "seed": 17,
+      "validationMacroF1": 0.9374874540793257,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 188.6662226250046
+    },
+    {
+      "stage": "fine-tune",
+      "seed": 17,
+      "validationMacroF1": 0.9991666660879626,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 533.9200456670078
+    },
+    {
+      "stage": "linear-probe",
+      "seed": 42,
+      "validationMacroF1": 0.954166380206543,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 188.07167316702544
+    },
+    {
+      "stage": "fine-tune",
+      "seed": 42,
+      "validationMacroF1": 0.9983333287036908,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 533.261703333992
+    },
+    {
+      "stage": "linear-probe",
+      "seed": 71,
+      "validationMacroF1": 0.9458269755269889,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 188.11572562501533
+    },
+    {
+      "stage": "fine-tune",
+      "seed": 71,
+      "validationMacroF1": 0.9983333287036908,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 534.0116114169941
+    }
+  ],
+  "selection": [
+    {"seed": 17, "selectedStage": "fine-tune", "validationMacroF1": 0.9991666660879626},
+    {"seed": 42, "selectedStage": "fine-tune", "validationMacroF1": 0.9983333287036908},
+    {"seed": 71, "selectedStage": "fine-tune", "validationMacroF1": 0.9983333287036908}
+  ],
+  "modelArtifacts": [
+    {
+      "seed": 17,
+      "manifestSha256": "3857cca1dc72e9eeb94dc7b439ae7f7c783337505705bcab96208bfea7f7a811",
+      "weightsSha256": "cb9f26bfc732fc000f87b11a4f119de502e6072f063867ed87ce08a9edc0d319",
+      "weightsSizeBytes": 597333864
+    },
+    {
+      "seed": 42,
+      "manifestSha256": "9f8ef5b75da5479be7387748ab8c6d4c8a908e0eec95bc6a5aeda6a06488ef70",
+      "weightsSha256": "1d4386e021e1077cab8df9f5967e4a4eca5a060c7e4059229989db8b4a1da8ae",
+      "weightsSizeBytes": 597333864
+    },
+    {
+      "seed": 71,
+      "manifestSha256": "548fdcb97d7e7e306d1020181eee01d35815a43398bb54d0d39b6be8514787a0",
+      "weightsSha256": "c9bbb14a1c8ff1b7a3ba1c51ef20b59a69ab94170aa0d6f9158883a35089add9",
+      "weightsSizeBytes": 597333864
+    }
+  ],
+  "testSplitAccessed": false,
+  "limitations": [
+    "Validation metrics are not final test evidence.",
+    "Near-perfect fine-tuning scores require source and generator slice analysis for shortcut learning."
+  ]
+}
