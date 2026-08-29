@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   contracts:
-    name: Python and preprocessing contracts
+    name: Python, preprocessing and model contracts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -66,16 +66,29 @@ jobs:
             tests/test_manifests.py \
             tests/test_splitting.py
 
+      - name: Test model adapter and offline prediction contracts
+        working-directory: ml/evaluation
+        run: |
+          python -m pytest \
+            tests/test_model_artifacts.py \
+            tests/test_model_adapters.py \
+            tests/test_offline_predictions.py \
+            tests/test_transformers_backend.py
+
       - name: Verify preprocessing CLI registration
         run: |
           nguven-eval validate-input --help >/dev/null
           nguven-eval verify-content-hashes --help >/dev/null
           nguven-eval preprocess-text --help >/dev/null
+          nguven-eval predict-text --help >/dev/null
 
       - name: Verify local ML artifacts stay untracked
         run: |
           git check-ignore --quiet --no-index ml/evaluation/inputs/private-dataset.jsonl
           git check-ignore --quiet --no-index ml/evaluation/preprocessed/private-run.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/predictions/private-run.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/models/artifacts/model.safetensors
+          git check-ignore --quiet --no-index ml/evaluation/models/cache/tokenizer.json
 
   container:
     name: Text AI container
