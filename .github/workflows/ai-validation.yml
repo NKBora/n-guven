@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   contracts:
-    name: Python, preprocessing and model contracts
+    name: Python, preprocessing and model readiness contracts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -75,12 +75,24 @@ jobs:
             tests/test_offline_predictions.py \
             tests/test_transformers_backend.py
 
-      - name: Verify preprocessing CLI registration
+      - name: Test fine-tuning and comparison readiness contracts
+        working-directory: ml/evaluation
+        run: |
+          python -m pytest \
+            tests/test_finetuning.py \
+            tests/test_model_packaging.py \
+            tests/test_comparison.py
+
+      - name: Verify AI pipeline CLI registration
         run: |
           nguven-eval validate-input --help >/dev/null
           nguven-eval verify-content-hashes --help >/dev/null
           nguven-eval preprocess-text --help >/dev/null
           nguven-eval predict-text --help >/dev/null
+          nguven-eval create-finetuning-plan --help >/dev/null
+          nguven-eval prepare-finetuning-data --help >/dev/null
+          nguven-eval package-finetuned-model --help >/dev/null
+          nguven-eval compare-models --help >/dev/null
 
       - name: Verify local ML artifacts stay untracked
         run: |
@@ -89,6 +101,8 @@ jobs:
           git check-ignore --quiet --no-index ml/evaluation/predictions/private-run.jsonl
           git check-ignore --quiet --no-index ml/evaluation/models/artifacts/model.safetensors
           git check-ignore --quiet --no-index ml/evaluation/models/cache/tokenizer.json
+          git check-ignore --quiet --no-index ml/evaluation/finetuning/runs/private-run/training/train.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/comparisons/reports/private-run.json
 
   container:
     name: Text AI container
