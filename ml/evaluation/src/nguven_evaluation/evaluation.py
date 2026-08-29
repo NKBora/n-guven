@@ -294,7 +294,7 @@ def _average_precision(actual: Sequence[int], probabilities: Sequence[float]) ->
         seen += len(group)
         if new_positives:
             average_precision += (new_positives / positives) * (true_positives / seen)
-    return average_precision
+    return min(max(average_precision, 0.0), 1.0)
 
 
 def _percentile_nearest_rank(values: Sequence[float], percentile: float) -> float:

@@ -9,6 +9,7 @@ import pytest
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
     EvaluationMetadata,
+    _average_precision,
     evaluate_predictions,
     load_predictions,
 )
@@ -104,6 +105,13 @@ def test_evaluate_predictions_computes_macro_metrics() -> None:
         "transformation",
     }
     assert result["run"]["createdAt"] == "2026-08-27T12:00:00Z"
+
+
+def test_average_precision_clamps_floating_point_roundoff() -> None:
+    actual = [1] * 600 + [0] * 600
+    probabilities = [1 - index * 1e-6 for index in range(1200)]
+
+    assert _average_precision(actual, probabilities) == 1.0
 
 
 def test_evaluate_applies_validation_calibration_to_matching_model() -> None:
