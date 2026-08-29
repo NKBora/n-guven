@@ -19,7 +19,7 @@ def write_lock(tmp_path: Path, lock: dict) -> Path:
     return path
 
 
-def test_repository_benchmark_locks_sources_without_claiming_results() -> None:
+def test_repository_benchmark_records_reviewed_materialization() -> None:
     lock = load_benchmark_lock()
 
     assert lock["benchmarkId"] == "text-origin-tr"
@@ -32,7 +32,8 @@ def test_repository_benchmark_locks_sources_without_claiming_results() -> None:
             if source["label"] == "synthetic"
         }
     ) >= 2
-    assert benchmark_evidence_allowed(lock) is False
+    assert lock["release"]["materializedArtifact"]["recordCount"] == 12000
+    assert benchmark_evidence_allowed(lock) is True
 
 
 def test_synthetic_sources_require_generator_provenance(tmp_path: Path) -> None:
@@ -47,7 +48,7 @@ def test_synthetic_sources_require_generator_provenance(tmp_path: Path) -> None:
 def test_unreviewed_release_cannot_enable_results(tmp_path: Path) -> None:
     lock = load_benchmark_lock()
     invalid = deepcopy(lock)
-    invalid["release"]["resultsAllowed"] = True
+    invalid["release"]["evidenceStatus"] = "not-materialized"
 
     with pytest.raises(BenchmarkContractError, match="before reviewed materialization"):
         load_benchmark_lock(write_lock(tmp_path, invalid))
@@ -60,4 +61,13 @@ def test_source_revisions_must_be_unique(tmp_path: Path) -> None:
     invalid["sources"][2]["revision"] = invalid["sources"][1]["revision"]
 
     with pytest.raises(BenchmarkContractError, match="source revisions must be unique"):
+        load_benchmark_lock(write_lock(tmp_path, invalid))
+
+
+def test_source_quotas_must_match_target_and_label_balance(tmp_path: Path) -> None:
+    lock = load_benchmark_lock()
+    invalid = deepcopy(lock)
+    invalid["sources"][0]["sampleCount"] -= 1
+
+    with pytest.raises(BenchmarkContractError, match="target record count"):
         load_benchmark_lock(write_lock(tmp_path, invalid))

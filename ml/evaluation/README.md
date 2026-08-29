@@ -13,8 +13,8 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - One-to-one manifest/input coverage and SHA-256 verification over exact UTF-8 text bytes.
 - Versioned Turkish text preprocessing with NFC Unicode and LF newline normalization.
 - Duplicate record ID and SHA-256 content-hash rejection.
-- Cross-split source and generator-family leakage checks.
-- Seeded, order-independent split assignment for connected source/generator groups.
+- Cross-split origin-group leakage checks with optional generator-family holdout audits.
+- Seeded, order-independent split assignment for connected origin groups.
 - Offline prediction validation and complete manifest-to-prediction coverage checks.
 - Accuracy, macro precision, macro recall, macro F1, and mean inference-time calculation.
 - Traceable result artifacts containing the dataset/model versions, Git commit, seed, creation time, and input hashes.
@@ -30,16 +30,18 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
   positive rate, P95 latency, source/generator/transformation slices, and 95% confidence
   intervals across seeds.
 
-The package does not download data or model weights, fine-tune models, claim benchmark evidence, or establish production thresholds. It can execute verified local inference after approved fine-tuned artifacts are supplied.
+The package downloads data only through the explicit hash-verified materialization
+command and model weights only through the opt-in training command. It does not make
+benchmark claims until reviewed private artifacts bind the exact hashes.
 
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than
 committing third-party text. It requires a balanced 12,000-record target, at least two
 synthetic generator families, deterministic 80/10/10 grouping, and explicit license and
-revision metadata. The committed release is intentionally `source-locked`: benchmark
-claims remain disabled until a separately reviewed private materialization binds exact
-manifest and preprocessing hashes.
+revision metadata. The committed release records the reviewed private materialization
+hashes and non-textual sampling summary. Result evidence is enabled only for artifacts
+that bind those exact manifest and preprocessing hashes.
 
 ```bash
 nguven-eval validate-benchmark benchmarks/text-origin-tr-v1.json
@@ -47,6 +49,24 @@ nguven-eval validate-benchmark benchmarks/text-origin-tr-v1.json
 
 This source lock is a reproducibility and governance artifact, not a measured dataset
 release or a performance result.
+
+The materializer downloads only the declared revisions, verifies every file SHA-256,
+removes hidden reasoning from the MiniMax source, excludes Qwen source passages,
+deduplicates exact content, and creates balanced per-source splits. Human excerpts are
+length-matched to the synthetic distribution to reduce a trivial length cue. Raw text
+stays local and is ignored by Git.
+
+```bash
+python -m pip install -e ".[materialization]"
+nguven-eval materialize-benchmark benchmarks/text-origin-tr-v1.json \
+  --source-cache benchmarks/cache/text-origin-tr-v1 \
+  --output benchmarks/private/text-origin-tr-v1 \
+  --accessed-at 2026-08-29T12:00:00+03:00 \
+  --allow-network
+```
+
+Only the non-textual summary, exact artifact hashes, and reviewed source lock may be
+published. The manifest, raw input, and preprocessed JSONL files remain private.
 
 ## Layout
 

@@ -28,6 +28,9 @@ training = [
   "torch>=2.6,<3",
   "transformers>=4.48,<5",
 ]
+materialization = [
+  "pyarrow>=19,<22",
+]
 
 [project.scripts]
 nguven-eval = "nguven_evaluation.cli:main"

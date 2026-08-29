@@ -66,6 +66,13 @@ from nguven_evaluation.manifests import (
     ManifestValidationError,
     load_manifest,
 )
+from nguven_evaluation.materialization import (
+    BenchmarkMaterializationError,
+    fetch_locked_sources,
+    materialize_benchmark,
+    sha256_regular_file as materialized_sha256,
+    write_materialized_benchmark,
+)
 from nguven_evaluation.model_adapters import CandidateTextModelAdapter, ModelAdapterError
 from nguven_evaluation.model_artifacts import (
     DEFAULT_MODEL_SCHEMA_PATH,
@@ -98,6 +105,7 @@ from nguven_evaluation.splitting import (
     DEFAULT_GROUP_DIMENSIONS,
     DatasetLeakageError,
     SplitRatios,
+    SUPPORTED_GROUP_DIMENSIONS,
     assign_splits,
     audit_manifest,
 )
@@ -127,6 +135,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     benchmark_parser.add_argument("benchmark", type=Path)
     benchmark_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_BENCHMARK_SCHEMA_PATH
+    )
+
+    materialize_parser = subparsers.add_parser(
+        "materialize-benchmark",
+        help="download, verify, sample, and preprocess the private Turkish benchmark",
+    )
+    materialize_parser.add_argument("benchmark", type=Path)
+    materialize_parser.add_argument("--source-cache", type=Path, required=True)
+    materialize_parser.add_argument("--output", type=Path, required=True)
+    materialize_parser.add_argument("--accessed-at", required=True)
+    materialize_parser.add_argument("--allow-network", action="store_true")
+    materialize_parser.add_argument(
         "--schema", type=Path, default=DEFAULT_BENCHMARK_SCHEMA_PATH
     )
 
@@ -384,6 +405,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "validate-benchmark":
             benchmark_lock = load_benchmark_lock(args.benchmark, schema_path=args.schema)
+        elif args.command == "materialize-benchmark":
+            benchmark_lock = load_benchmark_lock(args.benchmark, schema_path=args.schema)
+            source_paths = fetch_locked_sources(
+                benchmark_lock,
+                args.source_cache,
+                allow_network=args.allow_network,
+            )
+            materialized_benchmark = materialize_benchmark(
+                benchmark_lock,
+                source_paths,
+                accessed_at=args.accessed_at,
+            )
+            write_materialized_benchmark(materialized_benchmark, args.output)
+            materialized_hashes = {
+                "manifestSha256": materialized_sha256(args.output / "manifest.jsonl"),
+                "preprocessedSha256": materialized_sha256(
+                    args.output / "preprocessed.jsonl"
+                ),
+                "recordCount": materialized_benchmark.summary["recordCount"],
+            }
         elif args.command == "validate-experiment":
             experiment_specification = load_experiment_spec(
                 args.experiment, schema_path=args.schema
@@ -604,6 +645,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
     except (
         BenchmarkContractError,
+        BenchmarkMaterializationError,
         CalibrationError,
         DatasetLeakageError,
         DatasetInputError,
@@ -630,6 +672,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"Validated benchmark {benchmark_lock['benchmarkId']}:{benchmark_lock['version']} "
             f"with result evidence {evidence}"
         )
+    elif args.command == "materialize-benchmark":
+        print(json.dumps(materialized_hashes, sort_keys=True))
     elif args.command == "validate-experiment":
         print(
             f"Validated {experiment_specification['adapterId']} experiment "
@@ -698,7 +742,7 @@ def _add_grouping_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--group-by",
         action="append",
-        choices=DEFAULT_GROUP_DIMENSIONS,
+        choices=SUPPORTED_GROUP_DIMENSIONS,
         default=None,
         help="grouping dimension; repeat to select multiple (default: source and generator)",
     )

@@ -87,6 +87,24 @@ def _validate_semantics(lock: Mapping[str, Any]) -> None:
             f"Benchmark requires at least {minimum} synthetic generator families"
         )
 
+    sample_count = sum(int(source["sampleCount"]) for source in sources)
+    target_count = int(lock["sampling"]["targetRecordCount"])
+    if sample_count != target_count:
+        raise BenchmarkContractError(
+            "Benchmark source sample counts must equal the target record count"
+        )
+    label_counts = {
+        label: sum(
+            int(source["sampleCount"])
+            for source in sources
+            if source["label"] == label
+        )
+        for label in ("human", "synthetic")
+    }
+    expected_per_label = target_count // 2
+    if target_count % 2 or set(label_counts.values()) != {expected_per_label}:
+        raise BenchmarkContractError("Benchmark source quotas must preserve 50/50 labels")
+
     release = lock["release"]
     allowed = benchmark_evidence_allowed(lock)
     if release["resultsAllowed"] is True and not allowed:
