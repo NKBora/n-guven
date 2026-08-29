@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:training-environment:v1",
+  "title": "N-Güven Training Environment Lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "environmentId", "pythonVersion", "platformTag", "hardware", "packages", "execution"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "environmentId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+    "pythonVersion": {"type": "string", "pattern": "^3\\.12\\.[0-9]+$"},
+    "platformTag": {"type": "string", "minLength": 1, "maxLength": 256},
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu", "memoryBytes", "accelerator", "acceleratorCores"],
+      "properties": {
+        "cpu": {"type": "string", "minLength": 1, "maxLength": 128},
+        "memoryBytes": {"type": "integer", "minimum": 1073741824},
+        "accelerator": {"type": "string", "minLength": 1, "maxLength": 128},
+        "acceleratorCores": {"type": "integer", "minimum": 1}
+      }
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accelerate", "huggingface-hub", "numpy", "safetensors", "tokenizers", "torch", "transformers"],
+      "properties": {
+        "accelerate": {"$ref": "#/$defs/version"},
+        "huggingface-hub": {"$ref": "#/$defs/version"},
+        "numpy": {"$ref": "#/$defs/version"},
+        "safetensors": {"$ref": "#/$defs/version"},
+        "tokenizers": {"$ref": "#/$defs/version"},
+        "torch": {"$ref": "#/$defs/version"},
+        "transformers": {"$ref": "#/$defs/version"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device", "mixedPrecision", "bitwiseDeterministic", "statisticalSeeds"],
+      "properties": {
+        "device": {"enum": ["mps", "cuda", "cpu"]},
+        "mixedPrecision": {"enum": ["none", "fp16", "bf16"]},
+        "bitwiseDeterministic": {"type": "boolean"},
+        "statisticalSeeds": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(?:[A-Za-z0-9.+-]*)$"}
+  }
+}

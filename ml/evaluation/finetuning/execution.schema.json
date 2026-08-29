@@ -10,6 +10,9 @@
     "planId",
     "planSha256",
     "adapterId",
+    "experiment",
+    "benchmark",
+    "environment",
     "upstream",
     "dataset",
     "gitCommit",
@@ -22,6 +25,36 @@
     "planId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
     "planSha256": {"$ref": "#/$defs/sha256"},
     "adapterId": {"enum": ["berturk", "modernbert-tr"]},
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["experimentId", "sha256"],
+      "properties": {
+        "experimentId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmarkId", "version", "manifestSha256", "preprocessedSha256"],
+      "properties": {
+        "benchmarkId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+        "version": {"type": "string", "pattern": "^v[1-9][0-9]*$"},
+        "manifestSha256": {"$ref": "#/$defs/sha256"},
+        "preprocessedSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environmentId", "sha256", "device"],
+      "properties": {
+        "environmentId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "device": {"enum": ["mps", "cuda", "cpu"]}
+      }
+    },
     "upstream": {
       "type": "object",
       "additionalProperties": false,

@@ -21,8 +21,8 @@
     "maximumP95LatencyMs": 3000
   },
   "execution": {
-    "status": "awaiting-reviewed-data",
-    "allowed": false,
+    "status": "ready",
+    "allowed": true,
     "resultArtifact": null
   }
 }

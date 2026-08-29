@@ -88,6 +88,7 @@ def plan_for_files(tmp_path: Path) -> tuple[dict[str, Any], Path, Path]:
         seeds=[17, 42],
         epochs=3,
         train_batch_size=8,
+        gradient_accumulation_steps=1,
         evaluation_batch_size=16,
         learning_rate=0.00002,
         weight_decay=0.01,

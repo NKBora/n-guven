@@ -23,8 +23,8 @@ def shared_plan() -> dict:
     return {
         "dataset": {
             "version": "text-origin-tr-v1",
-            "manifestSha256": "1" * 64,
-            "preprocessedSha256": "2" * 64,
+            "manifestSha256": "92f0ce2a53a41b1b8e793582b851817bb6d182c61e026a3adcb2cb755badbb2a",
+            "preprocessedSha256": "bf46915e2f67bd70fe583f7ceeeae8c296c2337a6b7e5a0a87e849b1e07d806f",
         },
         "candidates": [
             {"adapterId": item.adapter_id, "repository": item.repository, "revision": item.revision}
@@ -34,15 +34,16 @@ def shared_plan() -> dict:
     }
 
 
-def test_berturk_experiment_is_pinned_but_not_yet_claimed() -> None:
+def test_berturk_experiment_is_ready_without_claiming_results() -> None:
     specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
     benchmark = load_benchmark_lock()
 
     validate_experiment_inputs(specification, plan=shared_plan(), benchmark=benchmark)
     assert specification["adapterId"] == "berturk"
     assert specification["protocol"]["seeds"] == [17, 42, 71]
-    assert specification["execution"]["status"] == "awaiting-reviewed-data"
-    assert experiment_execution_allowed(specification, benchmark) is False
+    assert specification["execution"]["status"] == "ready"
+    assert specification["execution"]["resultArtifact"] is None
+    assert experiment_execution_allowed(specification, benchmark) is True
 
 
 def test_berturk_experiment_rejects_upstream_drift(tmp_path: Path) -> None:
@@ -59,8 +60,10 @@ def test_berturk_experiment_rejects_upstream_drift(tmp_path: Path) -> None:
 def test_execution_requires_reviewed_materialized_benchmark() -> None:
     specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
     benchmark = load_benchmark_lock()
+    benchmark = deepcopy(benchmark)
+    benchmark["release"]["evidenceStatus"] = "not-materialized"
 
-    with pytest.raises(ExperimentContractError, match="not approved for execution"):
+    with pytest.raises(ExperimentContractError, match="not approved for result evidence"):
         validate_experiment_inputs(
             specification,
             plan=shared_plan(),

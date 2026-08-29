@@ -36,6 +36,7 @@ def plan(tmp_path: Path, seeds: list[int] | None = None) -> dict[str, Any]:
         seeds=seeds or [17, 42],
         epochs=3,
         train_batch_size=8,
+        gradient_accumulation_steps=1,
         evaluation_batch_size=16,
         learning_rate=0.00002,
         weight_decay=0.01,

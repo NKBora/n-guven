@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "planId": "text-origin-tr-v1",
+  "dataset": {
+    "version": "text-origin-tr-v1",
+    "manifestSha256": "92f0ce2a53a41b1b8e793582b851817bb6d182c61e026a3adcb2cb755badbb2a",
+    "preprocessedSha256": "bf46915e2f67bd70fe583f7ceeeae8c296c2337a6b7e5a0a87e849b1e07d806f",
+    "ontologyVersion": "text-origin-v1",
+    "preprocessingVersion": "tr-text-v1"
+  },
+  "candidates": [
+    {
+      "adapterId": "berturk",
+      "repository": "dbmdz/bert-base-turkish-cased",
+      "revision": "b6e1de16c983e0f2c70664591ea3f22810072608"
+    },
+    {
+      "adapterId": "modernbert-tr",
+      "repository": "ytu-ce-cosmos/modernbert-tr-base",
+      "revision": "d16b9da8f7dc0eadf8946255ee5f38042bdf59c2"
+    }
+  ],
+  "protocol": {
+    "seeds": [17, 42, 71],
+    "epochs": 3,
+    "trainBatchSize": 8,
+    "gradientAccumulationSteps": 2,
+    "evaluationBatchSize": 16,
+    "learningRate": 0.00002,
+    "weightDecay": 0.01,
+    "warmupRatio": 0.1,
+    "maxSequenceLength": 512,
+    "earlyStoppingPatience": 2,
+    "metricForBestModel": "macroF1",
+    "greaterIsBetter": true,
+    "loadBestModelAtEnd": true,
+    "saveFormat": "safetensors",
+    "testSplitPolicy": "untouched-until-final-evaluation"
+  }
+}

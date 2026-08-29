@@ -39,11 +39,19 @@ from nguven_evaluation.evaluation import (
     load_predictions,
     sha256_file,
 )
+from nguven_evaluation.environment import (
+    DEFAULT_ENVIRONMENT_LOCK_PATH,
+    DEFAULT_ENVIRONMENT_SCHEMA_PATH,
+    TrainingEnvironmentError,
+    load_environment_lock,
+    verify_training_environment,
+)
 from nguven_evaluation.experiments import (
     DEFAULT_EXPERIMENT_SCHEMA_PATH,
     ExperimentContractError,
     load_experiment_spec,
     validate_comparable_experiments,
+    validate_experiment_inputs,
 )
 from nguven_evaluation.integrity import (
     DatasetIntegrityError,
@@ -167,6 +175,17 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_pair_parser.add_argument(
         "--experiment", type=Path, action="append", required=True
     )
+
+    environment_parser = subparsers.add_parser(
+        "validate-training-environment",
+        help="verify the active runtime against the reviewed experiment lock",
+    )
+    environment_parser.add_argument(
+        "environment", type=Path, default=DEFAULT_ENVIRONMENT_LOCK_PATH, nargs="?"
+    )
+    environment_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_ENVIRONMENT_SCHEMA_PATH
+    )
     experiment_pair_parser.add_argument(
         "--schema", type=Path, default=DEFAULT_EXPERIMENT_SCHEMA_PATH
     )
@@ -239,6 +258,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_parser.add_argument("--seed", type=int, action="append", required=True)
     plan_parser.add_argument("--epochs", type=int, default=3)
     plan_parser.add_argument("--train-batch-size", type=int, default=16)
+    plan_parser.add_argument("--gradient-accumulation-steps", type=int, default=1)
     plan_parser.add_argument("--evaluation-batch-size", type=int, default=32)
     plan_parser.add_argument("--learning-rate", type=float, default=0.00002)
     plan_parser.add_argument("--weight-decay", type=float, default=0.01)
@@ -278,6 +298,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     train_parser.add_argument("training_root", type=Path)
     train_parser.add_argument("--plan", type=Path, required=True)
+    train_parser.add_argument("--experiment", type=Path, required=True)
+    train_parser.add_argument("--benchmark", type=Path, required=True)
+    train_parser.add_argument(
+        "--environment-lock",
+        type=Path,
+        default=DEFAULT_ENVIRONMENT_LOCK_PATH,
+    )
     train_parser.add_argument(
         "--adapter-id", required=True, choices=("berturk", "modernbert-tr")
     )
@@ -435,6 +462,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 for path in args.experiment
             ]
             validate_comparable_experiments(experiment_specifications)
+        elif args.command == "validate-training-environment":
+            environment_lock = load_environment_lock(
+                args.environment,
+                schema_path=args.schema,
+            )
+            active_environment = verify_training_environment(environment_lock)
         elif args.command == "fit-temperature-calibration":
             records = load_manifest(args.manifest, schema_path=args.schema)
             audit_manifest(records)
@@ -460,6 +493,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 seeds=args.seed,
                 epochs=args.epochs,
                 train_batch_size=args.train_batch_size,
+                gradient_accumulation_steps=args.gradient_accumulation_steps,
                 evaluation_batch_size=args.evaluation_batch_size,
                 learning_rate=args.learning_rate,
                 weight_decay=args.weight_decay,
@@ -490,6 +524,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             write_private_finetuning_package(readiness_package, args.output)
         elif args.command == "train-text-model":
+            training_plan = load_finetuning_plan(args.plan)
+            experiment_specification = load_experiment_spec(args.experiment)
+            benchmark_lock = load_benchmark_lock(args.benchmark)
+            validate_experiment_inputs(
+                experiment_specification,
+                plan=training_plan,
+                benchmark=benchmark_lock,
+                require_execution_ready=True,
+            )
+            if experiment_specification["adapterId"] != args.adapter_id:
+                raise ExperimentContractError(
+                    "Training adapter differs from the reviewed experiment"
+                )
+            environment_lock = load_environment_lock(args.environment_lock)
+            verify_training_environment(environment_lock)
             training_execution = execute_candidate_training(
                 plan_path=args.plan,
                 training_root=args.training_root,
@@ -501,6 +550,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                     allow_network=args.allow_network,
                     cache_dir=args.cache_dir,
                 ),
+                experiment=experiment_specification,
+                experiment_sha256=materialized_sha256(args.experiment),
+                benchmark=benchmark_lock,
+                environment_lock=environment_lock,
+                environment_sha256=materialized_sha256(args.environment_lock),
                 execution_schema_path=args.execution_schema,
             )
         elif args.command == "package-finetuned-model":
@@ -661,6 +715,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         OfflinePredictionError,
         OfflinePreprocessingError,
         TrainingExecutionError,
+        TrainingEnvironmentError,
         ValueError,
     ) as error:
         print(error)
@@ -682,6 +737,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     elif args.command == "validate-experiment-pair":
         print("Validated identical BERTurk and ModernBERT-TR experiment protocols")
+    elif args.command == "validate-training-environment":
+        print(
+            f"Validated {environment_lock['environmentId']} on "
+            f"{active_environment['device']}"
+        )
     elif args.command == "fit-temperature-calibration":
         print(
             f"Wrote validation-only temperature calibration for "

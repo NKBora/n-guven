@@ -53,6 +53,7 @@ def setup_execution(tmp_path: Path) -> tuple[Path, Path]:
         seeds=[17, 42, 71],
         epochs=3,
         train_batch_size=8,
+        gradient_accumulation_steps=1,
         evaluation_batch_size=16,
         learning_rate=0.00002,
         weight_decay=0.01,
@@ -98,6 +99,28 @@ class FakeBackend:
         )
 
 
+def provenance() -> dict[str, Any]:
+    return {
+        "experiment": {"experimentId": "berturk-v1"},
+        "experiment_sha256": "1" * 64,
+        "benchmark": {
+            "benchmarkId": "text-origin-tr",
+            "version": "v1",
+            "release": {
+                "materializedArtifact": {
+                    "manifestSha256": "2" * 64,
+                    "preprocessedSha256": "3" * 64,
+                }
+            },
+        },
+        "environment_lock": {
+            "environmentId": "fixture-v1",
+            "execution": {"device": "cpu"},
+        },
+        "environment_sha256": "4" * 64,
+    }
+
+
 def test_training_requests_are_seeded_and_stage_ordered(tmp_path: Path) -> None:
     plan_path, _ = setup_execution(tmp_path)
     plan = json.loads(plan_path.read_text())
@@ -133,10 +156,14 @@ def test_candidate_execution_is_atomic_and_selects_validation_winner(tmp_path: P
         git_commit="abcdef1234567",
         output_root=output,
         backend=FakeBackend(),
+        **provenance(),
     )
 
     assert len(execution["stages"]) == 6
     assert {item["selectedStage"] for item in execution["selection"]} == {"fine-tune"}
+    assert execution["experiment"]["experimentId"] == "berturk-v1"
+    assert execution["benchmark"]["benchmarkId"] == "text-origin-tr"
+    assert execution["environment"]["environmentId"] == "fixture-v1"
     assert (output / "execution.json").is_file()
     assert not any("test" in path.name for path in output.rglob("*"))
 

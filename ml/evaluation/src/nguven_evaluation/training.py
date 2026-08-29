@@ -150,6 +150,11 @@ def execute_candidate_training(
     git_commit: str,
     output_root: Path,
     backend: TrainingBackend,
+    experiment: Mapping[str, Any] | None = None,
+    experiment_sha256: str | None = None,
+    benchmark: Mapping[str, Any] | None = None,
+    environment_lock: Mapping[str, Any] | None = None,
+    environment_sha256: str | None = None,
     execution_schema_path: Path = DEFAULT_EXECUTION_SCHEMA_PATH,
 ) -> dict[str, Any]:
     """Execute both reviewed training stages atomically without access to test text."""
@@ -161,6 +166,19 @@ def execute_candidate_training(
         raise TrainingExecutionError("Training output directory must not already exist")
 
     plan = load_finetuning_plan(plan_path)
+    if any(
+        value is None
+        for value in (
+            experiment,
+            experiment_sha256,
+            benchmark,
+            environment_lock,
+            environment_sha256,
+        )
+    ):
+        raise TrainingExecutionError(
+            "Training requires experiment, benchmark, and environment provenance"
+        )
     splits = load_training_splits(training_root)
     candidate = CANDIDATES.get(adapter_id)
     if candidate is None:
@@ -195,6 +213,25 @@ def execute_candidate_training(
             "planId": plan["planId"],
             "planSha256": sha256_regular_file(plan_path),
             "adapterId": adapter_id,
+            "experiment": {
+                "experimentId": experiment["experimentId"],
+                "sha256": experiment_sha256,
+            },
+            "benchmark": {
+                "benchmarkId": benchmark["benchmarkId"],
+                "version": benchmark["version"],
+                "manifestSha256": benchmark["release"]["materializedArtifact"][
+                    "manifestSha256"
+                ],
+                "preprocessedSha256": benchmark["release"]["materializedArtifact"][
+                    "preprocessedSha256"
+                ],
+            },
+            "environment": {
+                "environmentId": environment_lock["environmentId"],
+                "sha256": environment_sha256,
+                "device": environment_lock["execution"]["device"],
+            },
             "upstream": {
                 "repository": candidate.repository,
                 "revision": candidate.revision,
@@ -316,6 +353,7 @@ class TransformersTrainerBackend:
             overwrite_output_dir=False,
             num_train_epochs=int(protocol["epochs"]),
             per_device_train_batch_size=int(protocol["trainBatchSize"]),
+            gradient_accumulation_steps=int(protocol["gradientAccumulationSteps"]),
             per_device_eval_batch_size=int(protocol["evaluationBatchSize"]),
             learning_rate=float(protocol["learningRate"]),
             weight_decay=float(protocol["weightDecay"]),

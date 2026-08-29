@@ -183,8 +183,12 @@ directory. The command fails if that directory contains test or unexpected mater
 
 ```bash
 python -m pip install -e ".[training]"
+nguven-eval validate-training-environment experiments/training-environment-v1.json
 nguven-eval train-text-model path/to/package/training \
-  --plan path/to/plan.json \
+  --plan finetuning/plans/text-origin-tr-v1.json \
+  --experiment experiments/berturk-v1.json \
+  --benchmark benchmarks/text-origin-tr-v1.json \
+  --environment-lock experiments/training-environment-v1.json \
   --adapter-id berturk \
   --run-id berturk-text-origin-v1 \
   --git-commit "$(git rev-parse HEAD)" \
@@ -199,8 +203,9 @@ reviewed download; subsequent runs can use an explicit local cache.
 
 The BERTurk baseline is frozen in `experiments/berturk-v1.json`: upstream revision,
 three seeds, both adaptation stages, sequence length, and the report's acceptance
-targets are explicit. Its status remains `awaiting-reviewed-data`, so the repository
-cannot present an execution or result before the benchmark materialization is reviewed.
+targets are explicit. Its status is `ready` because the reviewed materialization hashes
+match `finetuning/plans/text-origin-tr-v1.json`; this permits execution but does not
+claim a result.
 
 ```bash
 nguven-eval validate-experiment experiments/berturk-v1.json
@@ -214,6 +219,13 @@ nguven-eval validate-experiment-pair \
   --experiment experiments/berturk-v1.json \
   --experiment experiments/modernbert-tr-v1.json
 ```
+
+`experiments/training-environment-v1.json` freezes Python, PyTorch, Transformers,
+Accelerate, tokenizer, operating-system, MPS device, and M2 Pro hardware metadata.
+Every execution manifest binds the hashes of the experiment, benchmark, plan, and
+environment lock. The effective training batch is 16 through an on-device batch of 8
+and two gradient-accumulation steps, which keeps the 16 GB host within a reviewed
+memory envelope.
 
 ## Calibration and final evidence
 
