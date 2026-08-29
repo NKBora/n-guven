@@ -1,5 +1,11 @@
 """Reproducible evaluation tooling for N-Güven ML services."""
 
+from nguven_evaluation.comparison import (
+    ModelComparisonError,
+    compare_evaluation_results,
+    load_evaluation_result,
+    write_comparison_report,
+)
 from nguven_evaluation.dataset_inputs import DatasetInputError, load_dataset_input
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
@@ -12,6 +18,15 @@ from nguven_evaluation.integrity import (
     IntegrityReport,
     compute_text_content_hash,
     verify_dataset_content_hashes,
+)
+from nguven_evaluation.finetuning import (
+    FineTuningReadinessError,
+    PreparedFineTuningPackage,
+    build_finetuning_plan,
+    load_finetuning_plan,
+    load_label_ontology,
+    prepare_finetuning_package,
+    write_private_finetuning_package,
 )
 from nguven_evaluation.manifests import ManifestValidationError, load_manifest
 from nguven_evaluation.model_adapters import (
@@ -27,6 +42,11 @@ from nguven_evaluation.model_artifacts import (
     VerifiedModelArtifacts,
     load_model_artifact_manifest,
     verify_model_artifacts,
+)
+from nguven_evaluation.model_packaging import (
+    ModelPackagingError,
+    package_finetuned_model,
+    write_model_manifest,
 )
 from nguven_evaluation.offline_preprocessing import (
     OfflinePreprocessingError,
@@ -63,14 +83,18 @@ __all__ = [
     "DEFAULT_PREPROCESSING_VERSION",
     "EvaluationInputError",
     "EvaluationMetadata",
+    "FineTuningReadinessError",
     "IntegrityReport",
     "ManifestValidationError",
     "MODERNBERT_TR",
     "ModelAdapterError",
     "ModelArtifactError",
+    "ModelComparisonError",
+    "ModelPackagingError",
     "OfflinePreprocessingError",
     "OfflinePredictionError",
     "PreprocessedText",
+    "PreparedFineTuningPackage",
     "SUPPORTED_PREPROCESSING_VERSIONS",
     "SplitRatios",
     "TextPreprocessingError",
@@ -80,16 +104,26 @@ __all__ = [
     "audit_manifest",
     "build_preprocessed_records",
     "build_prediction_records",
+    "build_finetuning_plan",
+    "compare_evaluation_results",
     "compute_text_content_hash",
     "evaluate_predictions",
     "load_manifest",
+    "load_evaluation_result",
+    "load_finetuning_plan",
+    "load_label_ontology",
     "load_model_artifact_manifest",
     "load_dataset_input",
     "load_predictions",
     "load_preprocessed_records",
     "preprocess_turkish_text",
+    "prepare_finetuning_package",
+    "package_finetuned_model",
     "verify_dataset_content_hashes",
     "verify_model_artifacts",
     "write_private_jsonl",
+    "write_private_finetuning_package",
     "write_private_predictions",
+    "write_comparison_report",
+    "write_model_manifest",
 ]

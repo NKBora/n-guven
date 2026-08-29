@@ -21,15 +21,25 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - Strict model artifact provenance and local SHA-256 verification without network downloads.
 - A shared adapter boundary for pinned BERTurk and ModernBERT-TR upstream candidates.
 - Local-only Transformers sequence-classification inference and private prediction JSONL output.
+- A fixed `text-origin-v1` ontology and one shared multi-seed fine-tuning plan for both candidates.
+- Leakage-safe train/validation materialization with the final test split isolated by directory.
+- Fail-closed safetensors packaging and variance-preserving candidate comparison reports.
 
-The package does not download data or model weights, execute inference, choose a model, or establish production thresholds.
+The package does not download data or model weights, fine-tune models, claim benchmark evidence, or establish production thresholds. It can execute verified local inference after approved fine-tuned artifacts are supplied.
 
 ## Layout
 
 ```text
 ml/evaluation/
+├── comparisons/
+│   └── schema.json
+├── finetuning/
+│   ├── plan.schema.json
+│   └── record.schema.json
 ├── inputs/
 │   └── schema.json
+├── labels/
+│   └── text-origin-v1.json
 ├── manifests/
 │   └── schema.json
 ├── models/
@@ -72,6 +82,58 @@ nguven-eval predict-text ml/evaluation/preprocessed/run-id.jsonl \
 ```
 
 Before loading Transformers, the command verifies every declared local artifact size and SHA-256 hash. It uses `local_files_only=True`, disables remote code, accepts safetensors rather than pickle-based weights, validates preprocessing compatibility and labels, and writes predictions atomically with owner-only permissions.
+
+## Fine-tuning and comparison readiness
+
+This repository does not pretrain either model. Both pretrained candidates must be fine-tuned under one immutable plan and evaluated on the same untouched test records. Create that plan only after the reviewed manifest and `tr-text-v1` artifact exist:
+
+```bash
+nguven-eval create-finetuning-plan path/to/split-manifest.jsonl \
+  --preprocessed path/to/preprocessed.jsonl \
+  --output path/to/plan.json \
+  --plan-id text-origin-comparison-v1 \
+  --dataset-version reviewed-dataset-v1 \
+  --seed 17 --seed 42 --seed 71
+```
+
+Materialize the exact fine-tuning package:
+
+```bash
+nguven-eval prepare-finetuning-data path/to/split-manifest.jsonl \
+  --preprocessed path/to/preprocessed.jsonl \
+  --plan path/to/plan.json \
+  --output ml/evaluation/finetuning/runs/comparison-v1
+```
+
+The output contains `training/train.jsonl` and `training/validation.jsonl`. Test text and its test-only manifest are placed under `evaluation/`, so a fine-tuning command can receive only the `training/` directory. Every split must contain both `human` and `synthetic` labels; coverage, content hashes, Turkish text constraints, preprocessing version, duplicate content, source groups, and generator families are checked again before output.
+
+After fine-tuning, export a clean directory containing `model.safetensors`, `config.json`, tokenizer files, and no checkpoints, optimizer state, pickle files, executable code, subdirectories, or symbolic links. Package it for the existing offline prediction command:
+
+```bash
+nguven-eval package-finetuned-model path/to/clean-export \
+  --output path/to/berturk-manifest.json \
+  --model-id berturk-text-origin-v1 \
+  --adapter-id berturk \
+  --framework-version 4.48.0 \
+  --max-sequence-length 512 \
+  --plan path/to/plan.json \
+  --seed 17 \
+  --git-commit abcdef1234567 \
+  --intended-use "Offline Turkish human and synthetic text comparison." \
+  --limitations "Requires independent validation before any production decision."
+```
+
+Run `predict-text` and `evaluate` once per candidate and seed against only `evaluation/test.jsonl` and `evaluation/test-manifest.jsonl`. Then aggregate all result files without discarding seed variance:
+
+```bash
+nguven-eval compare-models \
+  --plan path/to/plan.json \
+  --result path/to/berturk-seed-17.json \
+  --result path/to/modernbert-tr-seed-17.json \
+  --output ml/evaluation/comparisons/reports/comparison-v1.json
+```
+
+The comparison requires identical dataset identity and seed coverage. It ranks mean macro F1 first, mean accuracy second, and mean inference time third while retaining population standard deviation and every prediction artifact hash.
 
 ## Local setup
 
