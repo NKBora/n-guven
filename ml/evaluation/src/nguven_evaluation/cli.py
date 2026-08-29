@@ -14,6 +14,11 @@ from nguven_evaluation.dataset_inputs import (
     DatasetInputError,
     load_dataset_input,
 )
+from nguven_evaluation.comparison import (
+    ModelComparisonError,
+    compare_result_files,
+    write_comparison_report,
+)
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
     EvaluationMetadata,
@@ -24,6 +29,18 @@ from nguven_evaluation.evaluation import (
 from nguven_evaluation.integrity import (
     DatasetIntegrityError,
     verify_dataset_content_hashes,
+)
+from nguven_evaluation.finetuning import (
+    DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
+    DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
+    DEFAULT_ONTOLOGY_PATH,
+    FineTuningReadinessError,
+    build_finetuning_plan,
+    load_finetuning_plan,
+    load_label_ontology,
+    prepare_finetuning_package,
+    write_private_finetuning_package,
+    write_private_json,
 )
 from nguven_evaluation.manifests import (
     DEFAULT_SCHEMA_PATH,
@@ -36,6 +53,11 @@ from nguven_evaluation.model_artifacts import (
     ModelArtifactError,
     load_model_artifact_manifest,
     verify_model_artifacts,
+)
+from nguven_evaluation.model_packaging import (
+    ModelPackagingError,
+    package_finetuned_model,
+    write_model_manifest,
 )
 from nguven_evaluation.offline_predictions import (
     DEFAULT_MAX_PREPROCESSED_BYTES,
@@ -130,6 +152,81 @@ def build_parser() -> argparse.ArgumentParser:
     )
     preprocess_parser.add_argument("--force", action="store_true")
 
+    plan_parser = subparsers.add_parser(
+        "create-finetuning-plan",
+        help="create one immutable protocol for both fine-tuning candidates",
+    )
+    plan_parser.add_argument("manifest", type=Path)
+    plan_parser.add_argument("--preprocessed", type=Path, required=True)
+    plan_parser.add_argument("--output", type=Path, required=True)
+    plan_parser.add_argument("--plan-id", required=True)
+    plan_parser.add_argument("--dataset-version", required=True)
+    plan_parser.add_argument("--seed", type=int, action="append", required=True)
+    plan_parser.add_argument("--epochs", type=int, default=3)
+    plan_parser.add_argument("--train-batch-size", type=int, default=16)
+    plan_parser.add_argument("--evaluation-batch-size", type=int, default=32)
+    plan_parser.add_argument("--learning-rate", type=float, default=0.00002)
+    plan_parser.add_argument("--weight-decay", type=float, default=0.01)
+    plan_parser.add_argument("--warmup-ratio", type=float, default=0.1)
+    plan_parser.add_argument("--max-sequence-length", type=int, default=512)
+    plan_parser.add_argument("--early-stopping-patience", type=int, default=2)
+    plan_parser.add_argument(
+        "--plan-schema",
+        type=Path,
+        default=DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
+    )
+
+    readiness_parser = subparsers.add_parser(
+        "prepare-finetuning-data",
+        help="materialize private train/validation data and an isolated test package",
+    )
+    readiness_parser.add_argument("manifest", type=Path)
+    readiness_parser.add_argument("--preprocessed", type=Path, required=True)
+    readiness_parser.add_argument("--plan", type=Path, required=True)
+    readiness_parser.add_argument("--output", type=Path, required=True)
+    readiness_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    readiness_parser.add_argument(
+        "--preprocessed-schema",
+        type=Path,
+        default=DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    )
+    readiness_parser.add_argument(
+        "--record-schema",
+        type=Path,
+        default=DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
+    )
+    readiness_parser.add_argument("--ontology", type=Path, default=DEFAULT_ONTOLOGY_PATH)
+
+    package_parser = subparsers.add_parser(
+        "package-finetuned-model",
+        help="create a verified manifest for one local fine-tuned safetensors bundle",
+    )
+    package_parser.add_argument("artifact_root", type=Path)
+    package_parser.add_argument("--output", type=Path, required=True)
+    package_parser.add_argument("--model-id", required=True)
+    package_parser.add_argument(
+        "--adapter-id",
+        required=True,
+        choices=("berturk", "modernbert-tr"),
+    )
+    package_parser.add_argument("--framework-version", required=True)
+    package_parser.add_argument("--max-sequence-length", type=int, required=True)
+    package_parser.add_argument("--plan", type=Path, required=True)
+    package_parser.add_argument("--seed", type=int, required=True)
+    package_parser.add_argument("--git-commit", required=True)
+    package_parser.add_argument("--intended-use", required=True)
+    package_parser.add_argument("--limitations", required=True)
+    package_parser.add_argument("--ontology", type=Path, default=DEFAULT_ONTOLOGY_PATH)
+    package_parser.add_argument("--model-schema", type=Path, default=DEFAULT_MODEL_SCHEMA_PATH)
+
+    compare_parser = subparsers.add_parser(
+        "compare-models",
+        help="aggregate same-seed evaluation evidence for the reviewed candidates",
+    )
+    compare_parser.add_argument("--plan", type=Path, required=True)
+    compare_parser.add_argument("--result", type=Path, action="append", required=True)
+    compare_parser.add_argument("--output", type=Path, required=True)
+
     predict_parser = subparsers.add_parser(
         "predict-text",
         help="generate private predictions from verified local model files",
@@ -195,7 +292,72 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        if args.command == "predict-text":
+        if args.command == "create-finetuning-plan":
+            load_manifest(args.manifest)
+            load_preprocessed_records(args.preprocessed)
+            plan = build_finetuning_plan(
+                plan_id=args.plan_id,
+                dataset_version=args.dataset_version,
+                manifest_path=args.manifest,
+                preprocessed_path=args.preprocessed,
+                seeds=args.seed,
+                epochs=args.epochs,
+                train_batch_size=args.train_batch_size,
+                evaluation_batch_size=args.evaluation_batch_size,
+                learning_rate=args.learning_rate,
+                weight_decay=args.weight_decay,
+                warmup_ratio=args.warmup_ratio,
+                max_sequence_length=args.max_sequence_length,
+                early_stopping_patience=args.early_stopping_patience,
+                schema_path=args.plan_schema,
+            )
+            write_private_json(plan, args.output)
+        elif args.command == "prepare-finetuning-data":
+            records = load_manifest(args.manifest, schema_path=args.schema)
+            preprocessed_records = load_preprocessed_records(
+                args.preprocessed,
+                schema_path=args.preprocessed_schema,
+            )
+            plan = load_finetuning_plan(
+                args.plan,
+                manifest_path=args.manifest,
+                preprocessed_path=args.preprocessed,
+            )
+            ontology = load_label_ontology(args.ontology)
+            readiness_package = prepare_finetuning_package(
+                records,
+                preprocessed_records,
+                plan=plan,
+                ontology=ontology,
+                record_schema_path=args.record_schema,
+            )
+            write_private_finetuning_package(readiness_package, args.output)
+        elif args.command == "package-finetuned-model":
+            if args.output.resolve(strict=False).is_relative_to(
+                args.artifact_root.resolve(strict=False)
+            ):
+                raise ModelPackagingError(
+                    "Model manifest output must be outside the artifact directory"
+                )
+            model_manifest = package_finetuned_model(
+                args.artifact_root,
+                model_id=args.model_id,
+                adapter_id=args.adapter_id,
+                framework_version=args.framework_version,
+                max_sequence_length=args.max_sequence_length,
+                plan_path=args.plan,
+                seed=args.seed,
+                git_commit=args.git_commit,
+                intended_use=args.intended_use,
+                limitations=args.limitations,
+                ontology_path=args.ontology,
+                schema_path=args.model_schema,
+            )
+            write_model_manifest(model_manifest, args.output)
+        elif args.command == "compare-models":
+            comparison_report = compare_result_files(args.result, plan_path=args.plan)
+            write_comparison_report(comparison_report, args.output)
+        elif args.command == "predict-text":
             ensure_prediction_path_is_distinct(
                 args.output,
                 [args.preprocessed, args.model_manifest, args.model_schema, args.preprocessed_schema],
@@ -309,9 +471,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         DatasetInputError,
         DatasetIntegrityError,
         EvaluationInputError,
+        FineTuningReadinessError,
         ManifestValidationError,
         ModelAdapterError,
         ModelArtifactError,
+        ModelComparisonError,
+        ModelPackagingError,
         OfflinePredictionError,
         OfflinePreprocessingError,
         ValueError,
@@ -319,7 +484,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(error)
         return 1
 
-    if args.command == "predict-text":
+    if args.command == "create-finetuning-plan":
+        print(f"Wrote fine-tuning plan {plan['planId']} to {args.output}")
+    elif args.command == "prepare-finetuning-data":
+        print(
+            f"Prepared {readiness_package.summary['recordCount']} fine-tuning record(s) "
+            f"with an isolated test split at {args.output}"
+        )
+    elif args.command == "package-finetuned-model":
+        print(
+            f"Wrote manifest for {model_manifest['modelId']} with "
+            f"{len(model_manifest['artifacts'])} verified artifact(s) to {args.output}"
+        )
+    elif args.command == "compare-models":
+        leaders = ", ".join(comparison_report["selection"]["leaders"])
+        print(
+            f"Wrote {comparison_report['selection']['status']} comparison result "
+            f"for {leaders} to {args.output}"
+        )
+    elif args.command == "predict-text":
         print(
             f"Wrote {len(records)} prediction record(s) to {args.output} "
             f"(sha256:{prediction_sha256})"

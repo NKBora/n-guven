@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-model-comparison:v1",
+  "title": "N-Güven Text Model Comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "createdAt", "planId", "dataset", "protocol", "candidates", "selection"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "planId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "recordCount", "manifestSha256"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 256},
+        "recordCount": {"type": "integer", "minimum": 1},
+        "manifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seeds", "primaryMetric", "tieBreakers"],
+      "properties": {
+        "seeds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer"}},
+        "primaryMetric": {"const": "macroF1"},
+        "tieBreakers": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "accuracy"},
+            {"const": "meanInferenceMs"}
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "leaders"],
+      "properties": {
+        "status": {"enum": ["selected", "tied"]},
+        "leaders": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["berturk", "modernbert-tr"]}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "metricSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mean", "populationStdDev"],
+      "properties": {
+        "mean": {"type": "number", "minimum": 0},
+        "populationStdDev": {"type": "number", "minimum": 0}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "adapterId", "modelVersion", "runIds", "metrics", "predictionArtifacts"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1},
+        "adapterId": {"enum": ["berturk", "modernbert-tr"]},
+        "modelVersion": {"type": "string", "minLength": 1, "maxLength": 256},
+        "runIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accuracy", "macroPrecision", "macroRecall", "macroF1", "meanInferenceMs"],
+          "properties": {
+            "accuracy": {"$ref": "#/$defs/metricSummary"},
+            "macroPrecision": {"$ref": "#/$defs/metricSummary"},
+            "macroRecall": {"$ref": "#/$defs/metricSummary"},
+            "macroF1": {"$ref": "#/$defs/metricSummary"},
+            "meanInferenceMs": {"$ref": "#/$defs/metricSummary"}
+          }
+        },
+        "predictionArtifacts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    }
+  }
+}

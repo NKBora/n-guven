@@ -56,6 +56,8 @@ ml/evaluation/preprocessed/*
 !ml/evaluation/preprocessed/schema.json
 ml/evaluation/predictions/*
 !ml/evaluation/predictions/schema.json
+ml/evaluation/finetuning/runs/
+ml/evaluation/comparisons/reports/
 
 # Local ML model weights and caches (contracts remain tracked)
 ml/evaluation/models/artifacts/

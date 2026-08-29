@@ -37,6 +37,14 @@ def valid_manifest(artifact: bytes = b"synthetic-model") -> dict[str, object]:
                 "url": "https://spdx.org/licenses/Apache-2.0.html",
             },
         },
+        "fineTuning": {
+            "planId": "synthetic-comparison-v1",
+            "planSha256": "1" * 64,
+            "datasetManifestSha256": "2" * 64,
+            "preprocessedSha256": "3" * 64,
+            "seed": 42,
+            "gitCommit": "abcdef1234567",
+        },
         "runtime": {
             "framework": "transformers",
             "frameworkVersion": "4.48.0",

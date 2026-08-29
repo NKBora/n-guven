@@ -13,6 +13,7 @@
     "languages",
     "preprocessingVersion",
     "upstream",
+    "fineTuning",
     "runtime",
     "labels",
     "artifacts",
@@ -73,6 +74,26 @@
         "tokenizerRevision": {"$ref": "#/$defs/revision"},
         "weightsLicense": {"$ref": "#/$defs/license"},
         "codeLicense": {"$ref": "#/$defs/license"}
+      }
+    },
+    "fineTuning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId",
+        "planSha256",
+        "datasetManifestSha256",
+        "preprocessedSha256",
+        "seed",
+        "gitCommit"
+      ],
+      "properties": {
+        "planId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+        "planSha256": {"$ref": "#/$defs/sha256"},
+        "datasetManifestSha256": {"$ref": "#/$defs/sha256"},
+        "preprocessedSha256": {"$ref": "#/$defs/sha256"},
+        "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+        "gitCommit": {"type": "string", "pattern": "^[A-Fa-f0-9]{7,64}$"}
       }
     },
     "runtime": {
@@ -137,6 +158,10 @@
     "limitations": {"type": "string", "minLength": 20, "maxLength": 4000}
   },
   "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
     "revision": {
       "type": "string",
       "description": "Immutable full upstream commit revision; mutable names such as main are forbidden.",

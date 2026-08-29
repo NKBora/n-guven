@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "ontologyVersion": "text-origin-v1",
+  "task": "text-classification",
+  "labels": {
+    "0": "human",
+    "1": "synthetic"
+  }
+}
