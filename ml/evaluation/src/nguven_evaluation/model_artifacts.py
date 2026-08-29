@@ -81,6 +81,7 @@ def verify_model_artifacts(
         if relative_path in seen_paths:
             raise ModelArtifactError(f"Duplicate model artifact path: {relative_path}")
         seen_paths.add(relative_path)
+        _reject_symlink_components(artifact_root, Path(relative_path))
         candidate = artifact_root / relative_path
         _require_regular_file(candidate, f"Model artifact {relative_path}")
         resolved_candidate = candidate.resolve(strict=True)
@@ -104,6 +105,16 @@ def verify_model_artifacts(
 def _require_regular_file(path: Path, label: str) -> None:
     if path.is_symlink() or not path.is_file():
         raise ModelArtifactError(f"{label} must be an existing non-symbolic-link file")
+
+
+def _reject_symlink_components(root: Path, relative_path: Path) -> None:
+    current = root
+    for component in relative_path.parts:
+        current = current / component
+        if current.is_symlink():
+            raise ModelArtifactError(
+                f"Model artifact contains a symbolic-link path component: {relative_path}"
+            )
 
 
 def _sha256_file(path: Path) -> str:

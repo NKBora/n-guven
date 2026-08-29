@@ -33,6 +33,12 @@ from nguven_evaluation.offline_preprocessing import (
     build_preprocessed_records,
     write_private_jsonl,
 )
+from nguven_evaluation.offline_predictions import (
+    OfflinePredictionError,
+    build_prediction_records,
+    load_preprocessed_records,
+    write_private_predictions,
+)
 from nguven_evaluation.preprocessing import (
     DEFAULT_PREPROCESSING_VERSION,
     SUPPORTED_PREPROCESSING_VERSIONS,
@@ -63,6 +69,7 @@ __all__ = [
     "ModelAdapterError",
     "ModelArtifactError",
     "OfflinePreprocessingError",
+    "OfflinePredictionError",
     "PreprocessedText",
     "SUPPORTED_PREPROCESSING_VERSIONS",
     "SplitRatios",
@@ -72,14 +79,17 @@ __all__ = [
     "assign_splits",
     "audit_manifest",
     "build_preprocessed_records",
+    "build_prediction_records",
     "compute_text_content_hash",
     "evaluate_predictions",
     "load_manifest",
     "load_model_artifact_manifest",
     "load_dataset_input",
     "load_predictions",
+    "load_preprocessed_records",
     "preprocess_turkish_text",
     "verify_dataset_content_hashes",
     "verify_model_artifacts",
     "write_private_jsonl",
+    "write_private_predictions",
 ]

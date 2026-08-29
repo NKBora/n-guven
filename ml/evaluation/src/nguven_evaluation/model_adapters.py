@@ -110,6 +110,10 @@ class CandidateTextModelAdapter:
         self._candidate = candidate
         self._model_id = str(manifest.get("modelId", ""))
         self._preprocessing_version = preprocessing_version
+        labels = manifest.get("labels")
+        if not isinstance(labels, Mapping) or not labels:
+            raise ModelAdapterError("Model manifest is missing its label mapping")
+        self._labels = frozenset(str(label) for label in labels.values())
         self._backend = backend
 
     @property
@@ -132,6 +136,8 @@ class CandidateTextModelAdapter:
             raise ModelAdapterError("Inference backend returned an invalid prediction type")
         if not prediction.label:
             raise ModelAdapterError("Inference backend returned an empty label")
+        if prediction.label not in self._labels:
+            raise ModelAdapterError("Inference backend returned a label outside the manifest")
         if prediction.score is not None and (
             not math.isfinite(prediction.score) or not 0 <= prediction.score <= 1
         ):

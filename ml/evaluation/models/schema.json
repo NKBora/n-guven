@@ -78,12 +78,19 @@
     "runtime": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["framework", "frameworkVersion", "pythonVersion", "artifactFormat"],
+      "required": [
+        "framework",
+        "frameworkVersion",
+        "pythonVersion",
+        "artifactFormat",
+        "maxSequenceLength"
+      ],
       "properties": {
         "framework": {"enum": ["transformers", "onnxruntime"]},
         "frameworkVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
         "pythonVersion": {"type": "string", "pattern": "^3\\.12(?:\\.[0-9]+)?$"},
-        "artifactFormat": {"enum": ["safetensors", "onnx"]}
+        "artifactFormat": {"enum": ["safetensors", "onnx"]},
+        "maxSequenceLength": {"type": "integer", "minimum": 1, "maximum": 65536}
       }
     },
     "labels": {
