@@ -37,6 +37,7 @@ from nguven_evaluation.experiments import (
     DEFAULT_EXPERIMENT_SCHEMA_PATH,
     ExperimentContractError,
     load_experiment_spec,
+    validate_comparable_experiments,
 )
 from nguven_evaluation.integrity import (
     DatasetIntegrityError,
@@ -129,6 +130,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     experiment_parser.add_argument("experiment", type=Path)
     experiment_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_EXPERIMENT_SCHEMA_PATH
+    )
+
+    experiment_pair_parser = subparsers.add_parser(
+        "validate-experiment-pair",
+        help="verify BERTurk and ModernBERT-TR use an identical comparison protocol",
+    )
+    experiment_pair_parser.add_argument(
+        "--experiment", type=Path, action="append", required=True
+    )
+    experiment_pair_parser.add_argument(
         "--schema", type=Path, default=DEFAULT_EXPERIMENT_SCHEMA_PATH
     )
 
@@ -352,6 +364,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             experiment_specification = load_experiment_spec(
                 args.experiment, schema_path=args.schema
             )
+        elif args.command == "validate-experiment-pair":
+            experiment_specifications = [
+                load_experiment_spec(path, schema_path=args.schema)
+                for path in args.experiment
+            ]
+            validate_comparable_experiments(experiment_specifications)
         elif args.command == "create-finetuning-plan":
             load_manifest(args.manifest)
             load_preprocessed_records(args.preprocessed)
@@ -573,6 +591,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"{experiment_specification['experimentId']} with status "
             f"{experiment_specification['execution']['status']}"
         )
+    elif args.command == "validate-experiment-pair":
+        print("Validated identical BERTurk and ModernBERT-TR experiment protocols")
     elif args.command == "create-finetuning-plan":
         print(f"Wrote fine-tuning plan {plan['planId']} to {args.output}")
     elif args.command == "prepare-finetuning-data":

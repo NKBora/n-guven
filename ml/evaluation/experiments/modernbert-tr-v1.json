@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "experimentId": "modernbert-tr-text-origin-v1",
+  "adapterId": "modernbert-tr",
+  "upstream": {
+    "repository": "ytu-ce-cosmos/modernbert-tr-base",
+    "revision": "d16b9da8f7dc0eadf8946255ee5f38042bdf59c2",
+    "weightsLicense": "Apache-2.0"
+  },
+  "benchmark": {"benchmarkId": "text-origin-tr", "version": "v1"},
+  "protocol": {
+    "seeds": [17, 42, 71],
+    "stages": ["linear-probe", "fine-tune"],
+    "primaryValidationMetric": "macroF1",
+    "maxSequenceLength": 512
+  },
+  "acceptance": {
+    "minimumMacroF1": 0.8,
+    "maximumHighConfidenceFalsePositiveRate": 0.05,
+    "maximumP95LatencyMs": 3000
+  },
+  "execution": {
+    "status": "awaiting-reviewed-data",
+    "allowed": false,
+    "resultArtifact": null
+  }
+}

@@ -23,6 +23,7 @@ from nguven_evaluation.experiments import (
     ExperimentContractError,
     experiment_execution_allowed,
     load_experiment_spec,
+    validate_comparable_experiments,
     validate_experiment_inputs,
 )
 from nguven_evaluation.integrity import (
@@ -156,6 +157,7 @@ __all__ = [
     "verify_dataset_content_hashes",
     "verify_model_artifacts",
     "validate_experiment_inputs",
+    "validate_comparable_experiments",
     "write_private_jsonl",
     "write_private_finetuning_package",
     "write_private_predictions",

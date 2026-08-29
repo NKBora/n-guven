@@ -9,9 +9,11 @@ import pytest
 from nguven_evaluation.benchmark import load_benchmark_lock
 from nguven_evaluation.experiments import (
     DEFAULT_BERTURK_EXPERIMENT_PATH,
+    DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH,
     ExperimentContractError,
     experiment_execution_allowed,
     load_experiment_spec,
+    validate_comparable_experiments,
     validate_experiment_inputs,
 )
 from nguven_evaluation.model_adapters import BERTURK, MODERNBERT_TR
@@ -75,3 +77,40 @@ def test_experiment_rejects_seed_drift() -> None:
 
     with pytest.raises(ExperimentContractError, match="seed order differs"):
         validate_experiment_inputs(specification, plan=plan, benchmark=benchmark)
+
+
+def test_modernbert_experiment_is_pinned_to_reviewed_identity() -> None:
+    specification = load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH)
+
+    assert specification["adapterId"] == "modernbert-tr"
+    assert specification["upstream"]["revision"] == MODERNBERT_TR.revision
+    assert specification["protocol"]["seeds"] == [17, 42, 71]
+
+
+def test_candidate_experiments_are_strictly_comparable() -> None:
+    validate_comparable_experiments(
+        [
+            load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH),
+            load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH),
+        ]
+    )
+
+
+def test_candidate_comparison_rejects_protocol_drift() -> None:
+    berturk = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    modernbert = load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH)
+    modernbert = deepcopy(modernbert)
+    modernbert["protocol"]["seeds"] = [17, 42, 99]
+
+    with pytest.raises(ExperimentContractError, match="different training protocol"):
+        validate_comparable_experiments([berturk, modernbert])
+
+
+def test_candidate_comparison_rejects_acceptance_drift() -> None:
+    berturk = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    modernbert = load_experiment_spec(DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH)
+    modernbert = deepcopy(modernbert)
+    modernbert["acceptance"]["minimumMacroF1"] = 0.7
+
+    with pytest.raises(ExperimentContractError, match="different acceptance thresholds"):
+        validate_comparable_experiments([berturk, modernbert])

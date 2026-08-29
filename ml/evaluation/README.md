@@ -183,6 +183,15 @@ cannot present an execution or result before the benchmark materialization is re
 nguven-eval validate-experiment experiments/berturk-v1.json
 ```
 
+ModernBERT-TR is frozen independently but must remain byte-for-byte comparable on
+benchmark, seeds, training stages, sequence length, and acceptance thresholds:
+
+```bash
+nguven-eval validate-experiment-pair \
+  --experiment experiments/berturk-v1.json \
+  --experiment experiments/modernbert-tr-v1.json
+```
+
 ## Local setup
 
 Python 3.12 is required.

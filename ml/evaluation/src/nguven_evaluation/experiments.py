@@ -14,6 +14,9 @@ from nguven_evaluation.model_adapters import CANDIDATES
 EVALUATION_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_EXPERIMENT_SCHEMA_PATH = EVALUATION_ROOT / "experiments" / "schema.json"
 DEFAULT_BERTURK_EXPERIMENT_PATH = EVALUATION_ROOT / "experiments" / "berturk-v1.json"
+DEFAULT_MODERNBERT_TR_EXPERIMENT_PATH = (
+    EVALUATION_ROOT / "experiments" / "modernbert-tr-v1.json"
+)
 DEFAULT_MAX_EXPERIMENT_BYTES = 1024 * 1024
 
 
@@ -94,6 +97,40 @@ def experiment_execution_allowed(
         and execution["allowed"] is True
         and benchmark_evidence_allowed(benchmark)
     )
+
+
+def validate_comparable_experiments(
+    specifications: list[Mapping[str, Any]],
+) -> None:
+    """Reject any candidate-specific drift that would invalidate the comparison."""
+    if len(specifications) != 2:
+        raise ExperimentContractError("Comparison requires exactly two experiments")
+    by_adapter = {str(item["adapterId"]): item for item in specifications}
+    if set(by_adapter) != set(CANDIDATES):
+        raise ExperimentContractError(
+            "Comparison requires exactly BERTurk and ModernBERT-TR experiments"
+        )
+    if len({str(item["experimentId"]) for item in specifications}) != 2:
+        raise ExperimentContractError("Comparison experiment ids must be unique")
+
+    baseline = by_adapter["berturk"]
+    candidate = by_adapter["modernbert-tr"]
+    for field, label in (
+        ("benchmark", "benchmark"),
+        ("protocol", "training protocol"),
+        ("acceptance", "acceptance thresholds"),
+    ):
+        if baseline[field] != candidate[field]:
+            raise ExperimentContractError(
+                f"Candidate experiments have different {label}"
+            )
+    baseline_execution = baseline["execution"]
+    candidate_execution = candidate["execution"]
+    if (
+        baseline_execution["status"] != candidate_execution["status"]
+        or baseline_execution["allowed"] != candidate_execution["allowed"]
+    ):
+        raise ExperimentContractError("Candidate experiment execution states differ")
 
 
 def _validate_candidate_identity(specification: Mapping[str, Any]) -> None:
