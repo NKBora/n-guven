@@ -89,6 +89,7 @@ def build_finetuning_plan(
             "weightDecay": weight_decay,
             "warmupRatio": warmup_ratio,
             "maxSequenceLength": max_sequence_length,
+            "attentionImplementation": "eager",
             "earlyStoppingPatience": early_stopping_patience,
             "metricForBestModel": "macroF1",
             "greaterIsBetter": True,

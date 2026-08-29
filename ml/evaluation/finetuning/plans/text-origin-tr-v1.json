@@ -30,6 +30,7 @@
     "weightDecay": 0.01,
     "warmupRatio": 0.1,
     "maxSequenceLength": 512,
+    "attentionImplementation": "eager",
     "earlyStoppingPatience": 2,
     "metricForBestModel": "macroF1",
     "greaterIsBetter": true,

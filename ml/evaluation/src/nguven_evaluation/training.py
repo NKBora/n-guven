@@ -315,6 +315,7 @@ class TransformersTrainerBackend:
                 label2id={"human": 0, "synthetic": 1},
                 use_safetensors=True,
                 ignore_mismatched_sizes=True,
+                attn_implementation=str(protocol["attentionImplementation"]),
                 **load_options,
             )
         except (OSError, ValueError) as error:
@@ -369,6 +370,7 @@ class TransformersTrainerBackend:
             seed=request.seed,
             data_seed=request.seed,
             report_to=[],
+            dataloader_pin_memory=False,
         )
         trainer = Trainer(
             model=model,

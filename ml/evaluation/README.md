@@ -225,7 +225,8 @@ Accelerate, tokenizer, operating-system, MPS device, and M2 Pro hardware metadat
 Every execution manifest binds the hashes of the experiment, benchmark, plan, and
 environment lock. The effective training batch is 16 through an on-device batch of 8
 and two gradient-accumulation steps, which keeps the 16 GB host within a reviewed
-memory envelope.
+memory envelope. The plan explicitly uses Transformers `eager` attention because the
+reviewed PyTorch MPS runtime does not implement training dropout in its SDPA path.
 
 ## Calibration and final evidence
 
