@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-model-artifact-manifest:v1",
+  "title": "N-Güven Text Model Artifact Manifest",
+  "description": "Provenance and integrity contract for an approved local text-classification model artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "modelId",
+    "adapterId",
+    "task",
+    "languages",
+    "preprocessingVersion",
+    "upstream",
+    "runtime",
+    "labels",
+    "artifacts",
+    "intendedUse",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "modelId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "adapterId": {
+      "enum": ["berturk", "modernbert-tr"]
+    },
+    "task": {
+      "const": "text-classification"
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "contains": {"const": "tr"},
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]{2,3}(?:-[A-Z]{2})?$"
+      }
+    },
+    "preprocessingVersion": {
+      "pattern": "^tr-text-v[1-9][0-9]*$",
+      "type": "string"
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "repository",
+        "revision",
+        "tokenizerRepository",
+        "tokenizerRevision",
+        "weightsLicense",
+        "codeLicense"
+      ],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1, "maxLength": 128},
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "revision": {"$ref": "#/$defs/revision"},
+        "tokenizerRepository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "tokenizerRevision": {"$ref": "#/$defs/revision"},
+        "weightsLicense": {"$ref": "#/$defs/license"},
+        "codeLicense": {"$ref": "#/$defs/license"}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "framework",
+        "frameworkVersion",
+        "pythonVersion",
+        "artifactFormat",
+        "maxSequenceLength"
+      ],
+      "properties": {
+        "framework": {"enum": ["transformers", "onnxruntime"]},
+        "frameworkVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
+        "pythonVersion": {"type": "string", "pattern": "^3\\.12(?:\\.[0-9]+)?$"},
+        "artifactFormat": {"enum": ["safetensors", "onnx"]},
+        "maxSequenceLength": {"type": "integer", "minimum": 1, "maximum": 65536}
+      }
+    },
+    "labels": {
+      "type": "object",
+      "minProperties": 2,
+      "propertyNames": {"pattern": "^[0-9]+$"},
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "role", "mediaType", "sha256", "sizeBytes"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+          },
+          "role": {
+            "enum": ["weights", "configuration", "tokenizer", "label-map"]
+          },
+          "mediaType": {
+            "enum": [
+              "application/json",
+              "application/octet-stream",
+              "application/vnd.safetensors",
+              "text/plain"
+            ]
+          },
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "sizeBytes": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "intendedUse": {"type": "string", "minLength": 20, "maxLength": 2000},
+    "limitations": {"type": "string", "minLength": 20, "maxLength": 4000}
+  },
+  "$defs": {
+    "revision": {
+      "type": "string",
+      "description": "Immutable full upstream commit revision; mutable names such as main are forbidden.",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spdxId", "url"],
+      "properties": {
+        "spdxId": {"type": "string", "pattern": "^[A-Za-z0-9.+-]{2,64}$"},
+        "url": {"type": "string", "format": "uri", "pattern": "^https://"}
+      }
+    }
+  }
+}

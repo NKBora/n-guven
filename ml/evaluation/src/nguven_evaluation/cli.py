@@ -30,6 +30,21 @@ from nguven_evaluation.manifests import (
     ManifestValidationError,
     load_manifest,
 )
+from nguven_evaluation.model_adapters import CandidateTextModelAdapter, ModelAdapterError
+from nguven_evaluation.model_artifacts import (
+    DEFAULT_MODEL_SCHEMA_PATH,
+    ModelArtifactError,
+    load_model_artifact_manifest,
+    verify_model_artifacts,
+)
+from nguven_evaluation.offline_predictions import (
+    DEFAULT_MAX_PREPROCESSED_BYTES,
+    OfflinePredictionError,
+    build_prediction_records,
+    ensure_prediction_path_is_distinct,
+    load_preprocessed_records,
+    write_private_predictions,
+)
 from nguven_evaluation.offline_preprocessing import (
     DEFAULT_PREPROCESSED_SCHEMA_PATH,
     OfflinePreprocessingError,
@@ -45,6 +60,7 @@ from nguven_evaluation.splitting import (
     assign_splits,
     audit_manifest,
 )
+from nguven_evaluation.transformers_backend import LocalTransformersBackend
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -114,6 +130,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     preprocess_parser.add_argument("--force", action="store_true")
 
+    predict_parser = subparsers.add_parser(
+        "predict-text",
+        help="generate private predictions from verified local model files",
+    )
+    predict_parser.add_argument("preprocessed", type=Path)
+    predict_parser.add_argument("--model-manifest", type=Path, required=True)
+    predict_parser.add_argument("--artifact-root", type=Path, required=True)
+    predict_parser.add_argument("--output", type=Path, required=True)
+    predict_parser.add_argument("--model-schema", type=Path, default=DEFAULT_MODEL_SCHEMA_PATH)
+    predict_parser.add_argument(
+        "--preprocessed-schema",
+        type=Path,
+        default=DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    )
+    predict_parser.add_argument(
+        "--max-file-bytes",
+        type=int,
+        default=DEFAULT_MAX_PREPROCESSED_BYTES,
+    )
+    predict_parser.add_argument("--force", action="store_true")
+
     audit_parser = subparsers.add_parser(
         "check-leakage",
         help="check duplicate records and cross-split source/generator groups",
@@ -158,7 +195,39 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        if args.command == "validate-input":
+        if args.command == "predict-text":
+            ensure_prediction_path_is_distinct(
+                args.output,
+                [args.preprocessed, args.model_manifest, args.model_schema, args.preprocessed_schema],
+            )
+            model_manifest = load_model_artifact_manifest(
+                args.model_manifest,
+                schema_path=args.model_schema,
+            )
+            verify_model_artifacts(model_manifest, artifact_root=args.artifact_root)
+            runtime = model_manifest["runtime"]
+            if runtime["framework"] != "transformers" or runtime["artifactFormat"] != "safetensors":
+                raise OfflinePredictionError(
+                    "predict-text currently requires a Transformers safetensors artifact"
+                )
+            backend = LocalTransformersBackend(
+                args.artifact_root,
+                labels=model_manifest["labels"],
+                max_sequence_length=int(runtime["maxSequenceLength"]),
+            )
+            adapter = CandidateTextModelAdapter(model_manifest, backend)
+            records = load_preprocessed_records(
+                args.preprocessed,
+                schema_path=args.preprocessed_schema,
+                max_file_bytes=args.max_file_bytes,
+            )
+            records = build_prediction_records(records, adapter=adapter)
+            prediction_sha256 = write_private_predictions(
+                records,
+                args.output,
+                force=args.force,
+            )
+        elif args.command == "validate-input":
             records = load_dataset_input(
                 args.input,
                 schema_path=args.schema,
@@ -241,13 +310,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         DatasetIntegrityError,
         EvaluationInputError,
         ManifestValidationError,
+        ModelAdapterError,
+        ModelArtifactError,
+        OfflinePredictionError,
         OfflinePreprocessingError,
         ValueError,
     ) as error:
         print(error)
         return 1
 
-    if args.command == "validate-manifest":
+    if args.command == "predict-text":
+        print(
+            f"Wrote {len(records)} prediction record(s) to {args.output} "
+            f"(sha256:{prediction_sha256})"
+        )
+    elif args.command == "validate-manifest":
         print(f"Validated {len(records)} record(s) from {args.manifest}")
     elif args.command == "validate-input":
         print(f"Validated {len(records)} local input record(s) from {args.input}")
