@@ -111,6 +111,46 @@ def test_comparison_aggregates_seed_variance_and_ranks_candidates(tmp_path: Path
     berturk = report["candidates"][1]
     assert berturk["metrics"]["macroF1"]["mean"] == pytest.approx(0.85)
     assert berturk["metrics"]["macroF1"]["populationStdDev"] == pytest.approx(0.05)
+    assert berturk["metrics"]["macroF1"]["confidence95Low"] >= 0
+    assert report["acceptance"]["candidates"][0]["status"] == "insufficient-evidence"
+
+
+def test_comparison_aggregates_complete_report_metrics_and_acceptance(tmp_path: Path) -> None:
+    results = candidate_results()
+    for item in results:
+        item["metrics"].update(
+            {
+                "prAuc": item["metrics"]["macroF1"],
+                "brierScore": 0.1,
+                "ece": 0.04,
+                "highConfidenceFalsePositiveRate": 0.03,
+                "p95InferenceMs": 20.0,
+            }
+        )
+
+    report = compare_evaluation_results(results, plan=plan(tmp_path))
+
+    assert all(
+        candidate["status"] == "passed"
+        for candidate in report["acceptance"]["candidates"]
+    )
+    assert report["candidates"][0]["metrics"]["ece"]["mean"] == pytest.approx(0.04)
+
+
+def test_comparison_rejects_partial_advanced_metrics(tmp_path: Path) -> None:
+    results = candidate_results()
+    results[0]["metrics"].update(
+        {
+            "prAuc": 0.8,
+            "brierScore": 0.1,
+            "ece": 0.04,
+            "highConfidenceFalsePositiveRate": 0.03,
+            "p95InferenceMs": 20.0,
+        }
+    )
+
+    with pytest.raises(ModelComparisonError, match="Advanced metric coverage"):
+        compare_evaluation_results(results, plan=plan(tmp_path))
 
 
 def test_comparison_reports_performance_tie_without_forcing_selection(tmp_path: Path) -> None:

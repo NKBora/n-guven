@@ -47,9 +47,10 @@
     "acceptance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["minimumMacroF1", "maximumHighConfidenceFalsePositiveRate", "maximumP95LatencyMs"],
+      "required": ["minimumMacroF1", "highConfidenceThreshold", "maximumHighConfidenceFalsePositiveRate", "maximumP95LatencyMs"],
       "properties": {
         "minimumMacroF1": {"type": "number", "minimum": 0, "maximum": 1},
+        "highConfidenceThreshold": {"type": "number", "exclusiveMinimum": 0.5, "maximum": 1},
         "maximumHighConfidenceFalsePositiveRate": {"type": "number", "minimum": 0, "maximum": 1},
         "maximumP95LatencyMs": {"type": "number", "exclusiveMinimum": 0}
       }

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-temperature-calibration:v1",
+  "title": "N-Güven Text Temperature Calibration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "method", "fittedSplit", "model", "temperature", "recordCount", "metrics", "artifacts"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "method": {"const": "temperature-scaling"},
+    "fittedSplit": {"const": "validation"},
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"enum": ["berturk", "modernbert-tr"]},
+        "version": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "temperature": {"type": "number", "minimum": 0.05, "maximum": 10},
+    "recordCount": {"type": "integer", "minimum": 2},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["negativeLogLikelihoodBefore", "negativeLogLikelihoodAfter", "brierBefore", "brierAfter", "eceBefore", "eceAfter"],
+      "properties": {
+        "negativeLogLikelihoodBefore": {"type": "number", "minimum": 0},
+        "negativeLogLikelihoodAfter": {"type": "number", "minimum": 0},
+        "brierBefore": {"type": "number", "minimum": 0, "maximum": 1},
+        "brierAfter": {"type": "number", "minimum": 0, "maximum": 1},
+        "eceBefore": {"type": "number", "minimum": 0, "maximum": 1},
+        "eceAfter": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifestSha256", "predictionsSha256"],
+      "properties": {
+        "manifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "predictionsSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

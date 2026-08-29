@@ -14,6 +14,12 @@ from nguven_evaluation.benchmark import (
     benchmark_evidence_allowed,
     load_benchmark_lock,
 )
+from nguven_evaluation.calibration import (
+    DEFAULT_CALIBRATION_SCHEMA_PATH,
+    CalibrationError,
+    fit_temperature_calibration,
+    load_calibration_artifact,
+)
 
 from nguven_evaluation.dataset_inputs import (
     DEFAULT_INPUT_SCHEMA_PATH,
@@ -350,7 +356,25 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate_parser.add_argument("--model-name", required=True)
     evaluate_parser.add_argument("--model-version", required=True)
     evaluate_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    evaluate_parser.add_argument("--calibration", type=Path)
+    evaluate_parser.add_argument("--high-confidence-threshold", type=float, default=0.8)
     evaluate_parser.add_argument("--force", action="store_true")
+
+    calibration_parser = subparsers.add_parser(
+        "fit-temperature-calibration",
+        help="fit validation-only temperature scaling for one candidate run",
+    )
+    calibration_parser.add_argument("manifest", type=Path)
+    calibration_parser.add_argument("--predictions", type=Path, required=True)
+    calibration_parser.add_argument("--output", type=Path, required=True)
+    calibration_parser.add_argument(
+        "--model-name", required=True, choices=("berturk", "modernbert-tr")
+    )
+    calibration_parser.add_argument("--model-version", required=True)
+    calibration_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    calibration_parser.add_argument(
+        "--calibration-schema", type=Path, default=DEFAULT_CALIBRATION_SCHEMA_PATH
+    )
     return parser
 
 
@@ -370,6 +394,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 for path in args.experiment
             ]
             validate_comparable_experiments(experiment_specifications)
+        elif args.command == "fit-temperature-calibration":
+            records = load_manifest(args.manifest, schema_path=args.schema)
+            audit_manifest(records)
+            predictions = load_predictions(args.predictions)
+            calibration_artifact = fit_temperature_calibration(
+                records,
+                predictions,
+                model_name=args.model_name,
+                model_version=args.model_version,
+                manifest_sha256=sha256_file(args.manifest),
+                predictions_sha256=sha256_file(args.predictions),
+                schema_path=args.calibration_schema,
+            )
+            write_private_json(calibration_artifact, args.output)
         elif args.command == "create-finetuning-plan":
             load_manifest(args.manifest)
             load_preprocessed_records(args.preprocessed)
@@ -552,6 +590,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 metadata=metadata,
                 manifest_sha256=sha256_file(args.manifest),
                 predictions_sha256=sha256_file(args.predictions),
+                calibration_artifact=(
+                    load_calibration_artifact(args.calibration)
+                    if args.calibration is not None
+                    else None
+                ),
+                high_confidence_threshold=args.high_confidence_threshold,
             )
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(
@@ -560,6 +604,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
     except (
         BenchmarkContractError,
+        CalibrationError,
         DatasetLeakageError,
         DatasetInputError,
         DatasetIntegrityError,
@@ -593,6 +638,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     elif args.command == "validate-experiment-pair":
         print("Validated identical BERTurk and ModernBERT-TR experiment protocols")
+    elif args.command == "fit-temperature-calibration":
+        print(
+            f"Wrote validation-only temperature calibration for "
+            f"{calibration_artifact['model']['name']} to {args.output}"
+        )
     elif args.command == "create-finetuning-plan":
         print(f"Wrote fine-tuning plan {plan['planId']} to {args.output}")
     elif args.command == "prepare-finetuning-data":

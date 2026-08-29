@@ -4,7 +4,7 @@
   "title": "N-Güven Text Model Comparison",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "createdAt", "planId", "dataset", "protocol", "candidates", "selection"],
+  "required": ["schemaVersion", "createdAt", "planId", "dataset", "protocol", "candidates", "selection", "acceptance"],
   "properties": {
     "schemaVersion": {"const": "1.0"},
     "createdAt": {"type": "string", "format": "date-time"},
@@ -56,16 +56,58 @@
           "items": {"enum": ["berturk", "modernbert-tr"]}
         }
       }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targets", "candidates"],
+      "properties": {
+        "targets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimumMacroF1", "maximumHighConfidenceFalsePositiveRate", "maximumP95LatencyMs"],
+          "properties": {
+            "minimumMacroF1": {"const": 0.8},
+            "maximumHighConfidenceFalsePositiveRate": {"const": 0.05},
+            "maximumP95LatencyMs": {"const": 3000.0}
+          }
+        },
+        "candidates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["adapterId", "status", "checks"],
+            "properties": {
+              "adapterId": {"enum": ["berturk", "modernbert-tr"]},
+              "status": {"enum": ["passed", "failed", "insufficient-evidence"]},
+              "checks": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["macroF1", "highConfidenceFalsePositiveRate", "p95InferenceMs"],
+                "properties": {
+                  "macroF1": {"type": "boolean"},
+                  "highConfidenceFalsePositiveRate": {"type": ["boolean", "null"]},
+                  "p95InferenceMs": {"type": ["boolean", "null"]}
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {
     "metricSummary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mean", "populationStdDev"],
+      "required": ["mean", "populationStdDev", "confidence95Low", "confidence95High"],
       "properties": {
         "mean": {"type": "number", "minimum": 0},
-        "populationStdDev": {"type": "number", "minimum": 0}
+        "populationStdDev": {"type": "number", "minimum": 0},
+        "confidence95Low": {"type": "number", "minimum": 0},
+        "confidence95High": {"type": "number", "minimum": 0}
       }
     },
     "candidate": {
@@ -86,7 +128,12 @@
             "macroPrecision": {"$ref": "#/$defs/metricSummary"},
             "macroRecall": {"$ref": "#/$defs/metricSummary"},
             "macroF1": {"$ref": "#/$defs/metricSummary"},
-            "meanInferenceMs": {"$ref": "#/$defs/metricSummary"}
+            "meanInferenceMs": {"$ref": "#/$defs/metricSummary"},
+            "prAuc": {"$ref": "#/$defs/metricSummary"},
+            "brierScore": {"$ref": "#/$defs/metricSummary"},
+            "ece": {"$ref": "#/$defs/metricSummary"},
+            "highConfidenceFalsePositiveRate": {"$ref": "#/$defs/metricSummary"},
+            "p95InferenceMs": {"$ref": "#/$defs/metricSummary"}
           }
         },
         "predictionArtifacts": {

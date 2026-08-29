@@ -26,6 +26,9 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - Fail-closed safetensors packaging and variance-preserving candidate comparison reports.
 - A versioned Turkish text benchmark source lock with pinned revisions, licenses,
   generator provenance, balanced sampling targets, and a fail-closed evidence gate.
+- Validation-only temperature scaling plus PR-AUC, Brier, ECE, high-confidence false
+  positive rate, P95 latency, source/generator/transformation slices, and 95% confidence
+  intervals across seeds.
 
 The package does not download data or model weights, fine-tune models, claim benchmark evidence, or establish production thresholds. It can execute verified local inference after approved fine-tuned artifacts are supplied.
 
@@ -191,6 +194,27 @@ nguven-eval validate-experiment-pair \
   --experiment experiments/berturk-v1.json \
   --experiment experiments/modernbert-tr-v1.json
 ```
+
+## Calibration and final evidence
+
+Temperature scaling is fitted on validation predictions only. The resulting private
+artifact is bound to the validation manifest and prediction hashes:
+
+```bash
+nguven-eval fit-temperature-calibration path/to/validation-manifest.jsonl \
+  --predictions path/to/validation-predictions.jsonl \
+  --model-name berturk \
+  --model-version berturk-text-origin-v1 \
+  --output ml/evaluation/calibration/runs/berturk-seed-17.json
+```
+
+Pass that artifact only when evaluating the untouched test split. The result adds
+PR-AUC, Brier score, ECE, the frozen 0.80-confidence false-positive rate, P95 latency,
+and source, generator, and transformation slices. `compare-models` preserves every
+seed, reports population standard deviation and a two-sided 95% t interval, and checks
+the report targets (Macro F1 >= 0.80, high-confidence false-positive rate <= 0.05,
+P95 text latency <= 3000 ms). Missing advanced metrics produce
+`insufficient-evidence`, never an implied pass.
 
 ## Local setup
 

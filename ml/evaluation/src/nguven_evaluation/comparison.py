@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from statistics import fmean, pstdev
+from math import sqrt
+from statistics import fmean, pstdev, stdev
 from typing import Any, Callable, Mapping, Sequence
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -22,6 +23,18 @@ METRIC_NAMES = (
     "macroF1",
     "meanInferenceMs",
 )
+ADVANCED_METRIC_NAMES = (
+    "prAuc",
+    "brierScore",
+    "ece",
+    "highConfidenceFalsePositiveRate",
+    "p95InferenceMs",
+)
+ACCEPTANCE_TARGETS = {
+    "minimumMacroF1": 0.8,
+    "maximumHighConfidenceFalsePositiveRate": 0.05,
+    "maximumP95LatencyMs": 3000.0,
+}
 
 
 class ModelComparisonError(ValueError):
@@ -59,6 +72,19 @@ def compare_evaluation_results(
     expected_seeds = {int(seed) for seed in plan["protocol"]["seeds"]}
     if len(expected_candidates) < 2:
         raise ModelComparisonError("Comparison plan must contain at least two candidates")
+    advanced_complete = [
+        all(metric in result.get("metrics", {}) for metric in ADVANCED_METRIC_NAMES)
+        for result in results
+    ]
+    advanced_any = [
+        any(metric in result.get("metrics", {}) for metric in ADVANCED_METRIC_NAMES)
+        for result in results
+    ]
+    if any(advanced_any) and not all(advanced_complete):
+        raise ModelComparisonError(
+            "Advanced metric coverage must be identical across every candidate and seed"
+        )
+    metric_names = METRIC_NAMES + ADVANCED_METRIC_NAMES if all(advanced_complete) else METRIC_NAMES
 
     grouped: dict[str, list[Mapping[str, Any]]] = {
         candidate: [] for candidate in expected_candidates
@@ -116,7 +142,7 @@ def compare_evaluation_results(
             metric: _summarize(
                 [float(result["metrics"][metric]) for result in ordered_results]
             )
-            for metric in METRIC_NAMES
+            for metric in metric_names
         }
         candidate_reports.append(
             {
@@ -163,6 +189,9 @@ def compare_evaluation_results(
             "status": "selected" if len(leaders) == 1 else "tied",
             "leaders": leaders,
         },
+        "acceptance": _acceptance_report(
+            candidate_reports, advanced_metrics=all(advanced_complete)
+        ),
     }
     _validate_comparison(report, schema_path=schema_path)
     return report
@@ -185,10 +214,79 @@ def write_comparison_report(report: Mapping[str, Any], output_path: Path) -> Non
 
 
 def _summarize(values: Sequence[float]) -> dict[str, float]:
+    mean = fmean(values)
+    if len(values) == 1:
+        margin = 0.0
+    else:
+        margin = _t_critical_95(len(values) - 1) * stdev(values) / sqrt(len(values))
     return {
-        "mean": fmean(values),
+        "mean": mean,
         "populationStdDev": pstdev(values),
+        "confidence95Low": max(0.0, mean - margin),
+        "confidence95High": mean + margin,
     }
+
+
+def _acceptance_report(
+    candidates: Sequence[Mapping[str, Any]], *, advanced_metrics: bool
+) -> dict[str, Any]:
+    reports: list[dict[str, Any]] = []
+    for candidate in candidates:
+        metrics = candidate["metrics"]
+        checks: dict[str, bool | None] = {
+            "macroF1": float(metrics["macroF1"]["mean"])
+            >= ACCEPTANCE_TARGETS["minimumMacroF1"],
+            "highConfidenceFalsePositiveRate": None,
+            "p95InferenceMs": None,
+        }
+        if advanced_metrics:
+            checks["highConfidenceFalsePositiveRate"] = (
+                float(metrics["highConfidenceFalsePositiveRate"]["mean"])
+                <= ACCEPTANCE_TARGETS["maximumHighConfidenceFalsePositiveRate"]
+            )
+            checks["p95InferenceMs"] = (
+                float(metrics["p95InferenceMs"]["mean"])
+                <= ACCEPTANCE_TARGETS["maximumP95LatencyMs"]
+            )
+        values = list(checks.values())
+        status = (
+            "insufficient-evidence"
+            if any(value is None for value in values)
+            else "passed" if all(values) else "failed"
+        )
+        reports.append(
+            {
+                "adapterId": candidate["adapterId"],
+                "status": status,
+                "checks": checks,
+            }
+        )
+    return {"targets": dict(ACCEPTANCE_TARGETS), "candidates": reports}
+
+
+def _t_critical_95(degrees_of_freedom: int) -> float:
+    values = {
+        1: 12.706,
+        2: 4.303,
+        3: 3.182,
+        4: 2.776,
+        5: 2.571,
+        6: 2.447,
+        7: 2.365,
+        8: 2.306,
+        9: 2.262,
+        10: 2.228,
+        11: 2.201,
+        12: 2.179,
+        13: 2.160,
+        14: 2.145,
+        15: 2.131,
+        16: 2.120,
+        17: 2.110,
+        18: 2.101,
+        19: 2.093,
+    }
+    return values.get(degrees_of_freedom, 1.96)
 
 
 def _performance_key(candidate: Mapping[str, Any]) -> tuple[float, float, float]:

@@ -16,6 +16,7 @@
   },
   "acceptance": {
     "minimumMacroF1": 0.8,
+    "highConfidenceThreshold": 0.8,
     "maximumHighConfidenceFalsePositiveRate": 0.05,
     "maximumP95LatencyMs": 3000
   },

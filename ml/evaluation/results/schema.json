@@ -47,7 +47,38 @@
         "macroPrecision": {"type": "number", "minimum": 0, "maximum": 1},
         "macroRecall": {"type": "number", "minimum": 0, "maximum": 1},
         "macroF1": {"type": "number", "minimum": 0, "maximum": 1},
-        "meanInferenceMs": {"type": "number", "minimum": 0}
+        "meanInferenceMs": {"type": "number", "minimum": 0},
+        "prAuc": {"type": "number", "minimum": 0, "maximum": 1},
+        "brierScore": {"type": "number", "minimum": 0, "maximum": 1},
+        "ece": {"type": "number", "minimum": 0, "maximum": 1},
+        "highConfidenceFalsePositiveRate": {"type": "number", "minimum": 0, "maximum": 1},
+        "p95InferenceMs": {"type": "number", "minimum": 0}
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "temperature", "validationManifestSha256", "validationPredictionsSha256"],
+      "properties": {
+        "method": {"const": "temperature-scaling"},
+        "temperature": {"type": "number", "minimum": 0.05, "maximum": 10},
+        "validationManifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "validationPredictionsSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "slices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dimension", "key", "recordCount", "macroF1", "falsePositiveRate"],
+        "properties": {
+          "dimension": {"enum": ["source", "generator", "transformation"]},
+          "key": {"type": "string", "minLength": 1, "maxLength": 256},
+          "recordCount": {"type": "integer", "minimum": 1},
+          "macroF1": {"type": "number", "minimum": 0, "maximum": 1},
+          "falsePositiveRate": {"type": "number", "minimum": 0, "maximum": 1}
+        }
       }
     },
     "artifacts": {
