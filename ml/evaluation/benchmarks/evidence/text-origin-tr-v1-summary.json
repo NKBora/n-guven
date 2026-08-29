@@ -1,0 +1,41 @@
+{
+  "benchmarkId": "text-origin-tr",
+  "benchmarkVersion": "v1",
+  "characterLengths": {
+    "maximum": 2048,
+    "median": 225,
+    "minimum": 80,
+    "p95": 2044
+  },
+  "controls": {
+    "contentDeduplication": "sha256-exact",
+    "hiddenReasoningExcluded": true,
+    "lengthMatching": "synthetic-distribution-targeted",
+    "rawTextCommitted": false
+  },
+  "generatorFamilyCounts": {
+    "minimax-m3": 3000,
+    "qwen3": 3000
+  },
+  "labelCounts": {
+    "human": 6000,
+    "synthetic": 6000
+  },
+  "materializedAt": "2026-08-29T12:00:00+03:00",
+  "recordCount": 12000,
+  "samplingSeed": 20260829,
+  "schemaVersion": "1.0",
+  "sourceCounts": {
+    "turkish-cot-minimax-m3": 3000,
+    "wikipedia-tr-20231101": 6000,
+    "wikipedia-tr-qwen3-query": 3000
+  },
+  "splitLabelCounts": {
+    "test:human": 600,
+    "test:synthetic": 600,
+    "train:human": 4800,
+    "train:synthetic": 4800,
+    "validation:human": 600,
+    "validation:synthetic": 600
+  }
+}

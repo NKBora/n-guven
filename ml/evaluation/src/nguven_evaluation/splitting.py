@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
 SPLIT_NAMES = ("train", "validation", "test")
-DEFAULT_GROUP_DIMENSIONS = ("source", "generator")
+# Generator family is a reporting slice, not a default leakage group. Treating an
+# entire generator family as one component makes a three-way stratified split
+# impossible when the benchmark intentionally contains only a few families.
+DEFAULT_GROUP_DIMENSIONS = ("source",)
+SUPPORTED_GROUP_DIMENSIONS = ("source", "generator")
 
 
 class DatasetLeakageError(ValueError):
@@ -157,6 +161,6 @@ def _select_split(component_key: str, *, seed: int, ratios: SplitRatios) -> str:
 
 
 def _validate_group_dimensions(group_dimensions: Sequence[str]) -> None:
-    unknown = sorted(set(group_dimensions) - set(DEFAULT_GROUP_DIMENSIONS))
+    unknown = sorted(set(group_dimensions) - set(SUPPORTED_GROUP_DIMENSIONS))
     if unknown:
         raise ValueError(f"Unknown grouping dimension(s): {', '.join(unknown)}")

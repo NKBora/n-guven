@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from jsonschema import Draft202012Validator, FormatChecker
 
 from nguven_evaluation.cli import main
 from nguven_evaluation.comparison import (
@@ -17,6 +18,16 @@ from nguven_evaluation.comparison import (
     write_comparison_report,
 )
 from nguven_evaluation.finetuning import build_finetuning_plan, write_private_json
+
+
+EVALUATION_ROOT = Path(__file__).resolve().parents[1]
+PUBLIC_COMPARISON_PATH = EVALUATION_ROOT / "comparisons" / "text-origin-tr-v1.json"
+FINAL_EVIDENCE_PATH = (
+    EVALUATION_ROOT
+    / "experiments"
+    / "evidence"
+    / "text-origin-tr-v1-final-evaluation.json"
+)
 
 
 def digest(value: str) -> str:
@@ -36,6 +47,7 @@ def plan(tmp_path: Path, seeds: list[int] | None = None) -> dict[str, Any]:
         seeds=seeds or [17, 42],
         epochs=3,
         train_batch_size=8,
+        gradient_accumulation_steps=1,
         evaluation_batch_size=16,
         learning_rate=0.00002,
         weight_decay=0.01,
@@ -111,6 +123,46 @@ def test_comparison_aggregates_seed_variance_and_ranks_candidates(tmp_path: Path
     berturk = report["candidates"][1]
     assert berturk["metrics"]["macroF1"]["mean"] == pytest.approx(0.85)
     assert berturk["metrics"]["macroF1"]["populationStdDev"] == pytest.approx(0.05)
+    assert berturk["metrics"]["macroF1"]["confidence95Low"] >= 0
+    assert report["acceptance"]["candidates"][0]["status"] == "insufficient-evidence"
+
+
+def test_comparison_aggregates_complete_report_metrics_and_acceptance(tmp_path: Path) -> None:
+    results = candidate_results()
+    for item in results:
+        item["metrics"].update(
+            {
+                "prAuc": item["metrics"]["macroF1"],
+                "brierScore": 0.1,
+                "ece": 0.04,
+                "highConfidenceFalsePositiveRate": 0.03,
+                "p95InferenceMs": 20.0,
+            }
+        )
+
+    report = compare_evaluation_results(results, plan=plan(tmp_path))
+
+    assert all(
+        candidate["status"] == "passed"
+        for candidate in report["acceptance"]["candidates"]
+    )
+    assert report["candidates"][0]["metrics"]["ece"]["mean"] == pytest.approx(0.04)
+
+
+def test_comparison_rejects_partial_advanced_metrics(tmp_path: Path) -> None:
+    results = candidate_results()
+    results[0]["metrics"].update(
+        {
+            "prAuc": 0.8,
+            "brierScore": 0.1,
+            "ece": 0.04,
+            "highConfidenceFalsePositiveRate": 0.03,
+            "p95InferenceMs": 20.0,
+        }
+    )
+
+    with pytest.raises(ModelComparisonError, match="Advanced metric coverage"):
+        compare_evaluation_results(results, plan=plan(tmp_path))
 
 
 def test_comparison_reports_performance_tie_without_forcing_selection(tmp_path: Path) -> None:
@@ -197,3 +249,35 @@ def test_comparison_cli_writes_valid_report(tmp_path: Path) -> None:
     assert json.loads(output.read_text(encoding="utf-8"))["selection"]["leaders"] == [
         "modernbert-tr"
     ]
+
+
+def test_public_frozen_test_comparison_is_schema_valid() -> None:
+    report = json.loads(PUBLIC_COMPARISON_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(
+        (EVALUATION_ROOT / "comparisons" / "schema.json").read_text(encoding="utf-8")
+    )
+
+    errors = list(
+        Draft202012Validator(
+            schema,
+            format_checker=FormatChecker(),
+        ).iter_errors(report)
+    )
+    assert errors == []
+    assert report["selection"] == {"status": "selected", "leaders": ["berturk"]}
+    assert all(
+        candidate["status"] == "passed"
+        for candidate in report["acceptance"]["candidates"]
+    )
+
+
+def test_final_evidence_binds_public_comparison_hash() -> None:
+    evidence = json.loads(FINAL_EVIDENCE_PATH.read_text(encoding="utf-8"))
+
+    assert hashlib.sha256(PUBLIC_COMPARISON_PATH.read_bytes()).hexdigest() == evidence[
+        "comparison"
+    ]["sha256"]
+    assert evidence["comparison"]["leader"] == "berturk"
+    assert evidence["testSplitAccessed"] is True
+    assert len(evidence["resultArtifacts"]) == 6
+    assert len(evidence["calibrationArtifacts"]) == 6

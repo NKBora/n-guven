@@ -9,9 +9,11 @@ import pytest
 from nguven_evaluation.evaluation import (
     EvaluationInputError,
     EvaluationMetadata,
+    _average_precision,
     evaluate_predictions,
     load_predictions,
 )
+from nguven_evaluation.calibration import fit_temperature_calibration
 
 
 def manifest_record(record_id: str, label: str) -> dict[str, object]:
@@ -94,7 +96,65 @@ def test_evaluate_predictions_computes_macro_metrics() -> None:
     assert result["metrics"]["macroRecall"] == pytest.approx(0.75)
     assert result["metrics"]["macroF1"] == pytest.approx(11 / 15)
     assert result["metrics"]["meanInferenceMs"] == pytest.approx(5.0)
+    assert result["metrics"]["prAuc"] == pytest.approx(2 / 3)
+    assert result["metrics"]["p95InferenceMs"] == pytest.approx(8.0)
+    assert result["metrics"]["highConfidenceFalsePositiveRate"] == pytest.approx(0.5)
+    assert {item["dimension"] for item in result["slices"]} == {
+        "source",
+        "generator",
+        "transformation",
+    }
     assert result["run"]["createdAt"] == "2026-08-27T12:00:00Z"
+
+
+def test_average_precision_clamps_floating_point_roundoff() -> None:
+    actual = [1] * 600 + [0] * 600
+    probabilities = [1 - index * 1e-6 for index in range(1200)]
+
+    assert _average_precision(actual, probabilities) == 1.0
+
+
+def test_evaluate_applies_validation_calibration_to_matching_model() -> None:
+    validation_manifest = [
+        {"id": f"v-{index}", "label": "human" if index < 10 else "synthetic", "split": "validation"}
+        for index in range(20)
+    ]
+    validation_predictions = [
+        prediction(
+            f"v-{index}",
+            ("human" if index < 10 else "synthetic") if index not in {1, 12} else ("synthetic" if index < 10 else "human"),
+        )
+        for index in range(20)
+    ]
+    calibration = fit_temperature_calibration(
+        validation_manifest,
+        validation_predictions,
+        model_name="berturk",
+        model_version="test-only",
+        manifest_sha256="c" * 64,
+        predictions_sha256="d" * 64,
+    )
+    manifest = [manifest_record("a", "human"), manifest_record("b", "synthetic")]
+    predictions = [prediction("a", "human"), prediction("b", "synthetic")]
+
+    result = evaluate_predictions(
+        manifest,
+        predictions,
+        metadata=EvaluationMetadata(
+            run_id="berturk-test-run",
+            git_commit="abcdef1234567",
+            seed=42,
+            dataset_version="synthetic-fixture-v1",
+            model_name="berturk",
+            model_version="test-only",
+        ),
+        manifest_sha256="a" * 64,
+        predictions_sha256="b" * 64,
+        calibration_artifact=calibration,
+    )
+
+    assert result["calibration"]["temperature"] == calibration["temperature"]
+    assert result["calibration"]["validationManifestSha256"] == "c" * 64
 
 
 def test_evaluate_predictions_is_order_independent() -> None:

@@ -222,13 +222,15 @@ Queue/routing adları, manual acknowledgement, retry/backoff, DLQ ve idempotency
 
 ## Yapay Zekâ Mimarisi
 
-**Durum: Türkçe metin servis/sözleşme temeli uygulandı; model ağırlığı ve ölçülmüş sonuç yoktur.** AI servislerinin backend process'inden ayrılması; Python bağımlılıklarının izole edilmesini, CPU worker'larının API'den bağımsız ölçeklenmesini ve model sürümlerinin ayrı yönetilmesini amaçlar.
+**Durum: Türkçe metin servis/sözleşme temeli ve tekrarlanabilir model karşılaştırması uygulandı; production model entegrasyonu henüz yapılmadı.** AI servislerinin backend process'inden ayrılması; Python bağımlılıklarının izole edilmesini, CPU worker'larının API'den bağımsız ölçeklenmesini ve model sürümlerinin ayrı yönetilmesini amaçlar.
 
 ### Türkçe Metin Analizi
 
 `services/text-ai/` altında Python 3.12/FastAPI uygulaması, `GET /health` ve `POST /v1/analyze/text` sözleşmeleri, merkezi karakter sınırı ve modelden bağımsız inference arayüzü bulunur. Mevcut deterministik adaptör skor üretmez; `UNAVAILABLE`, `not-configured` sürümleri ve açık yapılandırılmamış açıklaması döndürür.
 
-ModernBERT-TR ve BERTurk yalnız gelecek model adaylarıdır; uygulanmış, seçilmiş veya ölçülmüş değildir. Gelecekteki hedef CPU inference'tır; tokenizer, ONNX Runtime veya quantization kararı ancak veri, lisans, kalite ve latency doğrulamasından sonra verilecektir. Unicode/Türkçe normalizasyon, uzunluk yönetimi, tokenizer sürümü, duplicate kontrolü ve kaynak-temelli veri ayrımı deney protokolünde kayıt altına alınacaktır.
+ModernBERT-TR ve BERTurk aynı dondurulmuş protokol, üç seed ve 1.200 kayıtlık kapalı test kümesiyle fine-tune edilip karşılaştırılmıştır. İki aday da ortalama `0,999722` Macro-F1 elde ettiği için önceden tanımlanan latency tie-breaker uygulanmış; ortalama inference süresi `38,41 ms` olan BERTurk, `55,24 ms` ölçülen ModernBERT-TR önünde prototip entegrasyon adayı seçilmiştir. Her iki aday da kalite, yüksek güvenli false-positive ve p95 latency eşiklerini geçmiştir. Canonical sonuç [karşılaştırma kanıtında](ml/evaluation/comparisons/text-origin-tr-v1.json), karar kapsamı ise [ADR-0001](docs/adr/0001-select-berturk-for-text-origin-prototype.md) içinde kayıtlıdır.
+
+Bu seçim production onayı veya farklı kaynaklarda genelleme iddiası değildir. Sonuçların kusursuza yakın olması kaynak/stil kısayolları riskini artırır; adversarial ve dış-domain veri, drift izleme ve servis entegrasyon testleri tamamlanmadan model kullanıcı trafiğine açılmayacaktır. Unicode/Türkçe normalizasyonu, tokenizer sürümü, duplicate kontrolü, kaynak-temelli ayrım, validation-only kalibrasyon ve artifact hash'leri deney protokolünde kayıt altındadır.
 
 Model card veya üçüncü taraf benchmark değerleri N-Güven sonucu olarak sunulmayacaktır. Projenin kendi kapalı test protokolü tamamlanmadan başarı iddiası yapılmaz.
 

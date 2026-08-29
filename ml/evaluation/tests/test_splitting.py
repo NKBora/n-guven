@@ -67,7 +67,7 @@ def test_audit_rejects_generator_family_across_splits() -> None:
     second["generatorFamily"] = "model-family"
 
     with pytest.raises(DatasetLeakageError, match="generator:model-family"):
-        audit_manifest([first, second])
+        audit_manifest([first, second], group_dimensions=("source", "generator"))
 
 
 def test_assign_splits_is_repeatable_and_does_not_mutate_input() -> None:
@@ -92,7 +92,11 @@ def test_assign_splits_keeps_connected_groups_together() -> None:
         record("sample-c", source="source-c", generator="model-b"),
     ]
 
-    assigned = assign_splits(records, seed=7)
+    assigned = assign_splits(
+        records,
+        seed=7,
+        group_dimensions=("source", "generator"),
+    )
 
     assert len({item["split"] for item in assigned}) == 1
 

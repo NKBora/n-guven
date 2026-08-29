@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0",
+  "evidenceType": "validation-only-training-execution",
+  "runId": "berturk-text-origin-v1",
+  "planId": "text-origin-tr-v1",
+  "planSha256": "43cbdbb695a4ff6ac1d3c18cee7c04a41a47546a465db61b34da4eb5656aea1d",
+  "adapterId": "berturk",
+  "experiment": {
+    "experimentId": "berturk-text-origin-v1",
+    "sha256": "93d2e876593edd3928c145701931914ddc9a2040494bc8ae73a8ab31805aba3f"
+  },
+  "benchmark": {
+    "benchmarkId": "text-origin-tr",
+    "version": "v1",
+    "manifestSha256": "92f0ce2a53a41b1b8e793582b851817bb6d182c61e026a3adcb2cb755badbb2a",
+    "preprocessedSha256": "bf46915e2f67bd70fe583f7ceeeae8c296c2337a6b7e5a0a87e849b1e07d806f"
+  },
+  "environment": {
+    "environmentId": "m2-pro-mps-v1",
+    "sha256": "69afc852af5005269861e05046f0092d1df0c2185c714b1d2195379bbd0a2421",
+    "device": "mps"
+  },
+  "upstream": {
+    "repository": "dbmdz/bert-base-turkish-cased",
+    "revision": "b6e1de16c983e0f2c70664591ea3f22810072608"
+  },
+  "gitCommit": "7d80bc4c0f9f272c2dd920055910dbfc50223ab9",
+  "stages": [
+    {
+      "stage": "linear-probe",
+      "seed": 17,
+      "validationMacroF1": 0.6505360462893781,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 103.99481391601148
+    },
+    {
+      "stage": "fine-tune",
+      "seed": 17,
+      "validationMacroF1": 1.0,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 317.9694034169952
+    },
+    {
+      "stage": "linear-probe",
+      "seed": 42,
+      "validationMacroF1": 0.44431501471184626,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 102.26343712501694
+    },
+    {
+      "stage": "fine-tune",
+      "seed": 42,
+      "validationMacroF1": 0.9991666660879626,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 295.063335874991
+    },
+    {
+      "stage": "linear-probe",
+      "seed": 71,
+      "validationMacroF1": 0.38440492476060195,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 94.81239341699984
+    },
+    {
+      "stage": "fine-tune",
+      "seed": 71,
+      "validationMacroF1": 0.9983333287036908,
+      "bestEpoch": 1.0,
+      "trainingSeconds": 296.73293308299617
+    }
+  ],
+  "selection": [
+    {"seed": 17, "selectedStage": "fine-tune", "validationMacroF1": 1.0},
+    {"seed": 42, "selectedStage": "fine-tune", "validationMacroF1": 0.9991666660879626},
+    {"seed": 71, "selectedStage": "fine-tune", "validationMacroF1": 0.9983333287036908}
+  ],
+  "modelArtifacts": [
+    {
+      "seed": 17,
+      "manifestSha256": "a90bbce0dbf103147e67d5b002fff254be8620ed1c6e7202bf583fc84a46bbfc",
+      "weightsSha256": "2513e14fc9cf251c83623aeeeb452e8dc550a3aaab520ab8c3de14e835368686",
+      "weightsSizeBytes": 442499064
+    },
+    {
+      "seed": 42,
+      "manifestSha256": "12019e8aef042297bad60c8b2964a900abc4ae23116ecbfa3d72f08ef76dc2e9",
+      "weightsSha256": "c41d4c8e56ac486b519ed9d13b6596464735890c8010ba9ae10665ab6c302023",
+      "weightsSizeBytes": 442499064
+    },
+    {
+      "seed": 71,
+      "manifestSha256": "bb9f218e0521a322dd40c78f835ffed403c73d5afdb35631eda11812ae9ed212",
+      "weightsSha256": "325edeb1fb8078dcf662ee40d213f8536ffdf3268f21f74f83efaeb65b0ea6eb",
+      "weightsSizeBytes": 442499064
+    }
+  ],
+  "testSplitAccessed": false,
+  "limitations": [
+    "Validation metrics are not final test evidence.",
+    "Near-perfect fine-tuning scores require source and generator slice analysis for shortcut learning."
+  ]
+}

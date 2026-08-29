@@ -58,6 +58,9 @@ ml/evaluation/predictions/*
 !ml/evaluation/predictions/schema.json
 ml/evaluation/finetuning/runs/
 ml/evaluation/comparisons/reports/
+ml/evaluation/calibration/runs/
+ml/evaluation/benchmarks/private/
+ml/evaluation/benchmarks/cache/
 
 # Local ML model weights and caches (contracts remain tracked)
 ml/evaluation/models/artifacts/

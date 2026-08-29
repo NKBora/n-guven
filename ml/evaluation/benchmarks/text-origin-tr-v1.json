@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "benchmarkId": "text-origin-tr",
+  "version": "v1",
+  "task": "turkish-text-origin-classification",
+  "language": "tr",
+  "ontologyVersion": "text-origin-v1",
+  "preprocessingVersion": "tr-text-v1",
+  "release": {
+    "status": "materialized",
+    "evidenceStatus": "reviewed",
+    "resultsAllowed": true,
+    "materializedArtifact": {
+      "manifestSha256": "92f0ce2a53a41b1b8e793582b851817bb6d182c61e026a3adcb2cb755badbb2a",
+      "preprocessedSha256": "bf46915e2f67bd70fe583f7ceeeae8c296c2337a6b7e5a0a87e849b1e07d806f",
+      "summarySha256": "c5f3fffc2079d24a277306de215fe32b574a955daac085a5e5e8d2eed654f9c5",
+      "recordCount": 12000,
+      "materializedAt": "2026-08-29T12:00:00+03:00"
+    }
+  },
+  "sampling": {
+    "seed": 20260829,
+    "targetRecordCount": 12000,
+    "labelBalance": {"human": 0.5, "synthetic": 0.5},
+    "splitRatios": {"train": 0.8, "validation": 0.1, "test": 0.1},
+    "minimumGeneratorFamilies": 2
+  },
+  "sources": [
+    {
+      "sourceId": "wikipedia-tr-20231101",
+      "repository": "wikimedia/wikipedia",
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+      "configuration": "20231101.tr",
+      "split": "train",
+      "textField": "text",
+      "extraction": "wikipedia-article",
+      "sampleCount": 6000,
+      "artifacts": [
+        {
+          "path": "20231101.tr/train-00000-of-00002.parquet",
+          "size": 339973499,
+          "sha256": "6994014607c0920f049ff62c3ea03bfaa218848fa31fa331b6ad1e17ef8f393a"
+        },
+        {
+          "path": "20231101.tr/train-00001-of-00002.parquet",
+          "size": 212950160,
+          "sha256": "252310d22e2a6e08cf43fe0da1e4f2761e1e5437451326888b43d1c6798db73e"
+        }
+      ],
+      "label": "human",
+      "license": ["CC-BY-SA-3.0", "GFDL"],
+      "sourceUrl": "https://huggingface.co/datasets/wikimedia/wikipedia",
+      "generatorModel": null,
+      "generatorFamily": null,
+      "intendedUse": "Reviewed human-authored Turkish benchmark candidate; attribution and article-level grouping are mandatory.",
+      "eligibility": "benchmark-candidate"
+    },
+    {
+      "sourceId": "wikipedia-tr-qwen3-query",
+      "repository": "hasankursun/wikipedia-turkish-synthetic-query",
+      "revision": "76d36706089cf4427d69fe71c2a0564ad6c65b29",
+      "configuration": null,
+      "split": "train",
+      "textField": "query",
+      "extraction": "synthetic-query",
+      "sampleCount": 3000,
+      "artifacts": [
+        {
+          "path": "10k/finewiki_tr_10k.jsonl",
+          "size": 184075981,
+          "sha256": "a15c4c67fb925e6a21c79c158db8f8fd828728cc1f402d30b31eec4e0056d403"
+        }
+      ],
+      "label": "synthetic",
+      "license": ["CC-BY-SA-4.0"],
+      "sourceUrl": "https://huggingface.co/datasets/hasankursun/wikipedia-turkish-synthetic-query",
+      "generatorModel": "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF",
+      "generatorFamily": "qwen3",
+      "intendedUse": "Synthetic Turkish benchmark candidate; only the generated query field is eligible and source passages are excluded.",
+      "eligibility": "benchmark-candidate"
+    },
+    {
+      "sourceId": "turkish-cot-minimax-m3",
+      "repository": "AlicanKiraz0/Turkish-CoT-Instruct-Dataset",
+      "revision": "3473e6c6350564d5a7000faf3ff140e9c4b9d1f2",
+      "configuration": null,
+      "split": "train",
+      "textField": "messages",
+      "extraction": "assistant-final-answer",
+      "sampleCount": 3000,
+      "artifacts": [
+        {
+          "path": "train.jsonl",
+          "size": 28039504,
+          "sha256": "da9c2dd50d54ecb2d4868b264009081a9bf18c1d76e1662b161794cf46c94741"
+        }
+      ],
+      "label": "synthetic",
+      "license": ["Apache-2.0"],
+      "sourceUrl": "https://huggingface.co/datasets/AlicanKiraz0/Turkish-CoT-Instruct-Dataset",
+      "generatorModel": "MiniMax-M3",
+      "generatorFamily": "minimax-m3",
+      "intendedUse": "Synthetic Turkish benchmark candidate; only final answer text is eligible and hidden reasoning must be excluded.",
+      "eligibility": "benchmark-candidate"
+    }
+  ]
+}

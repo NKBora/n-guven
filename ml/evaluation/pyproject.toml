@@ -21,6 +21,16 @@ inference = [
   "torch>=2.6,<3",
   "transformers>=4.48,<6",
 ]
+training = [
+  "accelerate>=1.2,<2",
+  "numpy>=2,<3",
+  "safetensors>=0.5,<1",
+  "torch>=2.6,<3",
+  "transformers>=4.48,<5",
+]
+materialization = [
+  "pyarrow>=19,<22",
+]
 
 [project.scripts]
 nguven-eval = "nguven_evaluation.cli:main"

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-model-experiment:v1",
+  "title": "N-Güven Text Model Experiment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "experimentId", "adapterId", "upstream", "benchmark", "protocol", "acceptance", "execution"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "experimentId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+    "adapterId": {"enum": ["berturk", "modernbert-tr"]},
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "revision", "weightsLicense"],
+      "properties": {
+        "repository": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+        "revision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "weightsLicense": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmarkId", "version"],
+      "properties": {
+        "benchmarkId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+        "version": {"type": "string", "pattern": "^v[1-9][0-9]*$"}
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seeds", "stages", "primaryValidationMetric", "maxSequenceLength"],
+      "properties": {
+        "seeds": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+        },
+        "stages": {"const": ["linear-probe", "fine-tune"]},
+        "primaryValidationMetric": {"const": "macroF1"},
+        "maxSequenceLength": {"type": "integer", "minimum": 8, "maximum": 512}
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumMacroF1", "highConfidenceThreshold", "maximumHighConfidenceFalsePositiveRate", "maximumP95LatencyMs"],
+      "properties": {
+        "minimumMacroF1": {"type": "number", "minimum": 0, "maximum": 1},
+        "highConfidenceThreshold": {"type": "number", "exclusiveMinimum": 0.5, "maximum": 1},
+        "maximumHighConfidenceFalsePositiveRate": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximumP95LatencyMs": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "allowed", "resultArtifact"],
+      "properties": {
+        "status": {"enum": ["awaiting-reviewed-data", "ready", "completed"]},
+        "allowed": {"type": "boolean"},
+        "resultArtifact": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["sha256", "runCount"],
+          "properties": {
+            "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "runCount": {"type": "integer", "minimum": 3}
+          }
+        }
+      }
+    }
+  }
+}

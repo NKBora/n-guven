@@ -8,6 +8,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
+from nguven_evaluation.benchmark import (
+    DEFAULT_BENCHMARK_SCHEMA_PATH,
+    BenchmarkContractError,
+    benchmark_evidence_allowed,
+    load_benchmark_lock,
+)
+from nguven_evaluation.calibration import (
+    DEFAULT_CALIBRATION_SCHEMA_PATH,
+    CalibrationError,
+    fit_temperature_calibration,
+    load_calibration_artifact,
+)
+
 from nguven_evaluation.dataset_inputs import (
     DEFAULT_INPUT_SCHEMA_PATH,
     DEFAULT_MAX_INPUT_BYTES,
@@ -26,9 +39,29 @@ from nguven_evaluation.evaluation import (
     load_predictions,
     sha256_file,
 )
+from nguven_evaluation.environment import (
+    DEFAULT_ENVIRONMENT_LOCK_PATH,
+    DEFAULT_ENVIRONMENT_SCHEMA_PATH,
+    TrainingEnvironmentError,
+    load_environment_lock,
+    verify_training_environment,
+)
+from nguven_evaluation.experiments import (
+    DEFAULT_EXPERIMENT_SCHEMA_PATH,
+    ExperimentContractError,
+    load_experiment_spec,
+    validate_comparable_experiments,
+    validate_experiment_inputs,
+)
 from nguven_evaluation.integrity import (
     DatasetIntegrityError,
     verify_dataset_content_hashes,
+)
+from nguven_evaluation.inference_data import (
+    InferenceDataError,
+    prepare_inference_split,
+    sha256_file as inference_sha256,
+    write_private_inference_split,
 )
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
@@ -46,6 +79,13 @@ from nguven_evaluation.manifests import (
     DEFAULT_SCHEMA_PATH,
     ManifestValidationError,
     load_manifest,
+)
+from nguven_evaluation.materialization import (
+    BenchmarkMaterializationError,
+    fetch_locked_sources,
+    materialize_benchmark,
+    sha256_regular_file as materialized_sha256,
+    write_materialized_benchmark,
 )
 from nguven_evaluation.model_adapters import CandidateTextModelAdapter, ModelAdapterError
 from nguven_evaluation.model_artifacts import (
@@ -79,10 +119,17 @@ from nguven_evaluation.splitting import (
     DEFAULT_GROUP_DIMENSIONS,
     DatasetLeakageError,
     SplitRatios,
+    SUPPORTED_GROUP_DIMENSIONS,
     assign_splits,
     audit_manifest,
 )
 from nguven_evaluation.transformers_backend import LocalTransformersBackend
+from nguven_evaluation.training import (
+    DEFAULT_EXECUTION_SCHEMA_PATH,
+    TrainingExecutionError,
+    TransformersTrainerBackend,
+    execute_candidate_training,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -95,6 +142,59 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("manifest", type=Path)
     validate_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+
+    benchmark_parser = subparsers.add_parser(
+        "validate-benchmark",
+        help="validate a versioned Turkish text benchmark source lock",
+    )
+    benchmark_parser.add_argument("benchmark", type=Path)
+    benchmark_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_BENCHMARK_SCHEMA_PATH
+    )
+
+    materialize_parser = subparsers.add_parser(
+        "materialize-benchmark",
+        help="download, verify, sample, and preprocess the private Turkish benchmark",
+    )
+    materialize_parser.add_argument("benchmark", type=Path)
+    materialize_parser.add_argument("--source-cache", type=Path, required=True)
+    materialize_parser.add_argument("--output", type=Path, required=True)
+    materialize_parser.add_argument("--accessed-at", required=True)
+    materialize_parser.add_argument("--allow-network", action="store_true")
+    materialize_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_BENCHMARK_SCHEMA_PATH
+    )
+
+    experiment_parser = subparsers.add_parser(
+        "validate-experiment",
+        help="validate one pinned candidate fine-tuning experiment",
+    )
+    experiment_parser.add_argument("experiment", type=Path)
+    experiment_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_EXPERIMENT_SCHEMA_PATH
+    )
+
+    experiment_pair_parser = subparsers.add_parser(
+        "validate-experiment-pair",
+        help="verify BERTurk and ModernBERT-TR use an identical comparison protocol",
+    )
+    experiment_pair_parser.add_argument(
+        "--experiment", type=Path, action="append", required=True
+    )
+
+    environment_parser = subparsers.add_parser(
+        "validate-training-environment",
+        help="verify the active runtime against the reviewed experiment lock",
+    )
+    environment_parser.add_argument(
+        "environment", type=Path, default=DEFAULT_ENVIRONMENT_LOCK_PATH, nargs="?"
+    )
+    environment_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_ENVIRONMENT_SCHEMA_PATH
+    )
+    experiment_pair_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_EXPERIMENT_SCHEMA_PATH
+    )
 
     input_parser = subparsers.add_parser(
         "validate-input",
@@ -164,6 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_parser.add_argument("--seed", type=int, action="append", required=True)
     plan_parser.add_argument("--epochs", type=int, default=3)
     plan_parser.add_argument("--train-batch-size", type=int, default=16)
+    plan_parser.add_argument("--gradient-accumulation-steps", type=int, default=1)
     plan_parser.add_argument("--evaluation-batch-size", type=int, default=32)
     plan_parser.add_argument("--learning-rate", type=float, default=0.00002)
     plan_parser.add_argument("--weight-decay", type=float, default=0.01)
@@ -196,6 +297,49 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
     )
     readiness_parser.add_argument("--ontology", type=Path, default=DEFAULT_ONTOLOGY_PATH)
+
+    inference_data_parser = subparsers.add_parser(
+        "prepare-inference-split",
+        help="materialize an aligned validation or completion-gated frozen test split",
+    )
+    inference_data_parser.add_argument("manifest", type=Path)
+    inference_data_parser.add_argument("--preprocessed", type=Path, required=True)
+    inference_data_parser.add_argument(
+        "--split", required=True, choices=("validation", "test")
+    )
+    inference_data_parser.add_argument("--experiment", type=Path, action="append")
+    inference_data_parser.add_argument("--output", type=Path, required=True)
+    inference_data_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    inference_data_parser.add_argument(
+        "--preprocessed-schema",
+        type=Path,
+        default=DEFAULT_PREPROCESSED_SCHEMA_PATH,
+    )
+
+    train_parser = subparsers.add_parser(
+        "train-text-model",
+        help="run linear-probe and fine-tuning stages without access to test data",
+    )
+    train_parser.add_argument("training_root", type=Path)
+    train_parser.add_argument("--plan", type=Path, required=True)
+    train_parser.add_argument("--experiment", type=Path, required=True)
+    train_parser.add_argument("--benchmark", type=Path, required=True)
+    train_parser.add_argument(
+        "--environment-lock",
+        type=Path,
+        default=DEFAULT_ENVIRONMENT_LOCK_PATH,
+    )
+    train_parser.add_argument(
+        "--adapter-id", required=True, choices=("berturk", "modernbert-tr")
+    )
+    train_parser.add_argument("--run-id", required=True)
+    train_parser.add_argument("--git-commit", required=True)
+    train_parser.add_argument("--output", type=Path, required=True)
+    train_parser.add_argument("--cache-dir", type=Path)
+    train_parser.add_argument("--allow-network", action="store_true")
+    train_parser.add_argument(
+        "--execution-schema", type=Path, default=DEFAULT_EXECUTION_SCHEMA_PATH
+    )
 
     package_parser = subparsers.add_parser(
         "package-finetuned-model",
@@ -284,7 +428,25 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate_parser.add_argument("--model-name", required=True)
     evaluate_parser.add_argument("--model-version", required=True)
     evaluate_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    evaluate_parser.add_argument("--calibration", type=Path)
+    evaluate_parser.add_argument("--high-confidence-threshold", type=float, default=0.8)
     evaluate_parser.add_argument("--force", action="store_true")
+
+    calibration_parser = subparsers.add_parser(
+        "fit-temperature-calibration",
+        help="fit validation-only temperature scaling for one candidate run",
+    )
+    calibration_parser.add_argument("manifest", type=Path)
+    calibration_parser.add_argument("--predictions", type=Path, required=True)
+    calibration_parser.add_argument("--output", type=Path, required=True)
+    calibration_parser.add_argument(
+        "--model-name", required=True, choices=("berturk", "modernbert-tr")
+    )
+    calibration_parser.add_argument("--model-version", required=True)
+    calibration_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+    calibration_parser.add_argument(
+        "--calibration-schema", type=Path, default=DEFAULT_CALIBRATION_SCHEMA_PATH
+    )
     return parser
 
 
@@ -292,7 +454,59 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        if args.command == "create-finetuning-plan":
+        if args.command == "validate-benchmark":
+            benchmark_lock = load_benchmark_lock(args.benchmark, schema_path=args.schema)
+        elif args.command == "materialize-benchmark":
+            benchmark_lock = load_benchmark_lock(args.benchmark, schema_path=args.schema)
+            source_paths = fetch_locked_sources(
+                benchmark_lock,
+                args.source_cache,
+                allow_network=args.allow_network,
+            )
+            materialized_benchmark = materialize_benchmark(
+                benchmark_lock,
+                source_paths,
+                accessed_at=args.accessed_at,
+            )
+            write_materialized_benchmark(materialized_benchmark, args.output)
+            materialized_hashes = {
+                "manifestSha256": materialized_sha256(args.output / "manifest.jsonl"),
+                "preprocessedSha256": materialized_sha256(
+                    args.output / "preprocessed.jsonl"
+                ),
+                "recordCount": materialized_benchmark.summary["recordCount"],
+            }
+        elif args.command == "validate-experiment":
+            experiment_specification = load_experiment_spec(
+                args.experiment, schema_path=args.schema
+            )
+        elif args.command == "validate-experiment-pair":
+            experiment_specifications = [
+                load_experiment_spec(path, schema_path=args.schema)
+                for path in args.experiment
+            ]
+            validate_comparable_experiments(experiment_specifications)
+        elif args.command == "validate-training-environment":
+            environment_lock = load_environment_lock(
+                args.environment,
+                schema_path=args.schema,
+            )
+            active_environment = verify_training_environment(environment_lock)
+        elif args.command == "fit-temperature-calibration":
+            records = load_manifest(args.manifest, schema_path=args.schema)
+            audit_manifest(records)
+            predictions = load_predictions(args.predictions)
+            calibration_artifact = fit_temperature_calibration(
+                records,
+                predictions,
+                model_name=args.model_name,
+                model_version=args.model_version,
+                manifest_sha256=sha256_file(args.manifest),
+                predictions_sha256=sha256_file(args.predictions),
+                schema_path=args.calibration_schema,
+            )
+            write_private_json(calibration_artifact, args.output)
+        elif args.command == "create-finetuning-plan":
             load_manifest(args.manifest)
             load_preprocessed_records(args.preprocessed)
             plan = build_finetuning_plan(
@@ -303,6 +517,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 seeds=args.seed,
                 epochs=args.epochs,
                 train_batch_size=args.train_batch_size,
+                gradient_accumulation_steps=args.gradient_accumulation_steps,
                 evaluation_batch_size=args.evaluation_batch_size,
                 learning_rate=args.learning_rate,
                 weight_decay=args.weight_decay,
@@ -332,6 +547,61 @@ def main(argv: Sequence[str] | None = None) -> int:
                 record_schema_path=args.record_schema,
             )
             write_private_finetuning_package(readiness_package, args.output)
+        elif args.command == "prepare-inference-split":
+            records = load_manifest(args.manifest, schema_path=args.schema)
+            preprocessed_records = load_preprocessed_records(
+                args.preprocessed,
+                schema_path=args.preprocessed_schema,
+            )
+            experiments = [
+                load_experiment_spec(path) for path in (args.experiment or [])
+            ]
+            inference_package = prepare_inference_split(
+                records,
+                preprocessed_records,
+                split=args.split,
+                experiments=experiments,
+            )
+            inference_provenance = write_private_inference_split(
+                inference_package,
+                args.output,
+                source_manifest_sha256=inference_sha256(args.manifest),
+                source_preprocessed_sha256=inference_sha256(args.preprocessed),
+            )
+        elif args.command == "train-text-model":
+            training_plan = load_finetuning_plan(args.plan)
+            experiment_specification = load_experiment_spec(args.experiment)
+            benchmark_lock = load_benchmark_lock(args.benchmark)
+            validate_experiment_inputs(
+                experiment_specification,
+                plan=training_plan,
+                benchmark=benchmark_lock,
+                require_execution_ready=True,
+            )
+            if experiment_specification["adapterId"] != args.adapter_id:
+                raise ExperimentContractError(
+                    "Training adapter differs from the reviewed experiment"
+                )
+            environment_lock = load_environment_lock(args.environment_lock)
+            verify_training_environment(environment_lock)
+            training_execution = execute_candidate_training(
+                plan_path=args.plan,
+                training_root=args.training_root,
+                adapter_id=args.adapter_id,
+                run_id=args.run_id,
+                git_commit=args.git_commit,
+                output_root=args.output,
+                backend=TransformersTrainerBackend(
+                    allow_network=args.allow_network,
+                    cache_dir=args.cache_dir,
+                ),
+                experiment=experiment_specification,
+                experiment_sha256=materialized_sha256(args.experiment),
+                benchmark=benchmark_lock,
+                environment_lock=environment_lock,
+                environment_sha256=materialized_sha256(args.environment_lock),
+                execution_schema_path=args.execution_schema,
+            )
         elif args.command == "package-finetuned-model":
             if args.output.resolve(strict=False).is_relative_to(
                 args.artifact_root.resolve(strict=False)
@@ -460,6 +730,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 metadata=metadata,
                 manifest_sha256=sha256_file(args.manifest),
                 predictions_sha256=sha256_file(args.predictions),
+                calibration_artifact=(
+                    load_calibration_artifact(args.calibration)
+                    if args.calibration is not None
+                    else None
+                ),
+                high_confidence_threshold=args.high_confidence_threshold,
             )
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(
@@ -467,11 +743,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 encoding="utf-8",
             )
     except (
+        BenchmarkContractError,
+        BenchmarkMaterializationError,
+        CalibrationError,
         DatasetLeakageError,
         DatasetInputError,
         DatasetIntegrityError,
         EvaluationInputError,
+        ExperimentContractError,
         FineTuningReadinessError,
+        InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
         ModelArtifactError,
@@ -479,17 +760,55 @@ def main(argv: Sequence[str] | None = None) -> int:
         ModelPackagingError,
         OfflinePredictionError,
         OfflinePreprocessingError,
+        TrainingExecutionError,
+        TrainingEnvironmentError,
         ValueError,
     ) as error:
         print(error)
         return 1
 
-    if args.command == "create-finetuning-plan":
+    if args.command == "validate-benchmark":
+        evidence = "enabled" if benchmark_evidence_allowed(benchmark_lock) else "disabled"
+        print(
+            f"Validated benchmark {benchmark_lock['benchmarkId']}:{benchmark_lock['version']} "
+            f"with result evidence {evidence}"
+        )
+    elif args.command == "materialize-benchmark":
+        print(json.dumps(materialized_hashes, sort_keys=True))
+    elif args.command == "validate-experiment":
+        print(
+            f"Validated {experiment_specification['adapterId']} experiment "
+            f"{experiment_specification['experimentId']} with status "
+            f"{experiment_specification['execution']['status']}"
+        )
+    elif args.command == "validate-experiment-pair":
+        print("Validated identical BERTurk and ModernBERT-TR experiment protocols")
+    elif args.command == "validate-training-environment":
+        print(
+            f"Validated {environment_lock['environmentId']} on "
+            f"{active_environment['device']}"
+        )
+    elif args.command == "fit-temperature-calibration":
+        print(
+            f"Wrote validation-only temperature calibration for "
+            f"{calibration_artifact['model']['name']} to {args.output}"
+        )
+    elif args.command == "create-finetuning-plan":
         print(f"Wrote fine-tuning plan {plan['planId']} to {args.output}")
     elif args.command == "prepare-finetuning-data":
         print(
             f"Prepared {readiness_package.summary['recordCount']} fine-tuning record(s) "
             f"with an isolated test split at {args.output}"
+        )
+    elif args.command == "prepare-inference-split":
+        print(
+            f"Prepared {inference_provenance['recordCount']} {args.split} inference "
+            f"record(s) at {args.output}"
+        )
+    elif args.command == "train-text-model":
+        print(
+            f"Completed {len(training_execution['stages'])} training stage(s) for "
+            f"{training_execution['adapterId']} at {args.output}"
         )
     elif args.command == "package-finetuned-model":
         print(
@@ -534,7 +853,7 @@ def _add_grouping_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--group-by",
         action="append",
-        choices=DEFAULT_GROUP_DIMENSIONS,
+        choices=SUPPORTED_GROUP_DIMENSIONS,
         default=None,
         help="grouping dimension; repeat to select multiple (default: source and generator)",
     )
