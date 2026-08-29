@@ -30,7 +30,7 @@ def shared_plan() -> dict:
             {"adapterId": item.adapter_id, "repository": item.repository, "revision": item.revision}
             for item in (BERTURK, MODERNBERT_TR)
         ],
-        "protocol": {"seeds": [17, 42, 71], "maxSequenceLength": 512},
+        "protocol": {"seeds": [17, 42, 71], "maxSequenceLength": 128},
     }
 
 

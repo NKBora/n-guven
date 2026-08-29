@@ -156,7 +156,7 @@ nguven-eval package-finetuned-model path/to/clean-export \
   --model-id berturk-text-origin-v1 \
   --adapter-id berturk \
   --framework-version 4.48.0 \
-  --max-sequence-length 512 \
+  --max-sequence-length 128 \
   --plan path/to/plan.json \
   --seed 17 \
   --git-commit abcdef1234567 \
@@ -223,9 +223,9 @@ nguven-eval validate-experiment-pair \
 `experiments/training-environment-v1.json` freezes Python, PyTorch, Transformers,
 Accelerate, tokenizer, operating-system, MPS device, and M2 Pro hardware metadata.
 Every execution manifest binds the hashes of the experiment, benchmark, plan, and
-environment lock. The effective training batch is 16 through an on-device batch of 8
-and two gradient-accumulation steps, which keeps the 16 GB host within a reviewed
-memory envelope. The plan explicitly uses Transformers `eager` attention because the
+environment lock. The reviewed MPS compute budget uses one complete epoch, a 128-token
+input ceiling, and an on-device batch of 32 on the 16 GB host. The plan explicitly uses
+Transformers `eager` attention because the
 reviewed PyTorch MPS runtime does not implement training dropout in its SDPA path.
 
 ## Calibration and final evidence

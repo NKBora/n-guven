@@ -12,7 +12,7 @@
     "seeds": [17, 42, 71],
     "stages": ["linear-probe", "fine-tune"],
     "primaryValidationMetric": "macroF1",
-    "maxSequenceLength": 512
+    "maxSequenceLength": 128
   },
   "acceptance": {
     "minimumMacroF1": 0.8,
