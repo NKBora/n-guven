@@ -33,6 +33,11 @@ from nguven_evaluation.evaluation import (
     load_predictions,
     sha256_file,
 )
+from nguven_evaluation.experiments import (
+    DEFAULT_EXPERIMENT_SCHEMA_PATH,
+    ExperimentContractError,
+    load_experiment_spec,
+)
 from nguven_evaluation.integrity import (
     DatasetIntegrityError,
     verify_dataset_content_hashes,
@@ -116,6 +121,15 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("benchmark", type=Path)
     benchmark_parser.add_argument(
         "--schema", type=Path, default=DEFAULT_BENCHMARK_SCHEMA_PATH
+    )
+
+    experiment_parser = subparsers.add_parser(
+        "validate-experiment",
+        help="validate one pinned candidate fine-tuning experiment",
+    )
+    experiment_parser.add_argument("experiment", type=Path)
+    experiment_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_EXPERIMENT_SCHEMA_PATH
     )
 
     input_parser = subparsers.add_parser(
@@ -334,6 +348,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "validate-benchmark":
             benchmark_lock = load_benchmark_lock(args.benchmark, schema_path=args.schema)
+        elif args.command == "validate-experiment":
+            experiment_specification = load_experiment_spec(
+                args.experiment, schema_path=args.schema
+            )
         elif args.command == "create-finetuning-plan":
             load_manifest(args.manifest)
             load_preprocessed_records(args.preprocessed)
@@ -528,6 +546,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         DatasetInputError,
         DatasetIntegrityError,
         EvaluationInputError,
+        ExperimentContractError,
         FineTuningReadinessError,
         ManifestValidationError,
         ModelAdapterError,
@@ -547,6 +566,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Validated benchmark {benchmark_lock['benchmarkId']}:{benchmark_lock['version']} "
             f"with result evidence {evidence}"
+        )
+    elif args.command == "validate-experiment":
+        print(
+            f"Validated {experiment_specification['adapterId']} experiment "
+            f"{experiment_specification['experimentId']} with status "
+            f"{experiment_specification['execution']['status']}"
         )
     elif args.command == "create-finetuning-plan":
         print(f"Wrote fine-tuning plan {plan['planId']} to {args.output}")

@@ -174,6 +174,15 @@ ties prefer the simpler linear probe. Pinned upstream revisions are loaded with 
 code disabled and safetensors required. Network access is opt-in only for the initial
 reviewed download; subsequent runs can use an explicit local cache.
 
+The BERTurk baseline is frozen in `experiments/berturk-v1.json`: upstream revision,
+three seeds, both adaptation stages, sequence length, and the report's acceptance
+targets are explicit. Its status remains `awaiting-reviewed-data`, so the repository
+cannot present an execution or result before the benchmark materialization is reviewed.
+
+```bash
+nguven-eval validate-experiment experiments/berturk-v1.json
+```
+
 ## Local setup
 
 Python 3.12 is required.

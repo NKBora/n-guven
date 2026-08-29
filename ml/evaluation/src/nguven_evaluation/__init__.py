@@ -19,6 +19,12 @@ from nguven_evaluation.evaluation import (
     evaluate_predictions,
     load_predictions,
 )
+from nguven_evaluation.experiments import (
+    ExperimentContractError,
+    experiment_execution_allowed,
+    load_experiment_spec,
+    validate_experiment_inputs,
+)
 from nguven_evaluation.integrity import (
     DatasetIntegrityError,
     IntegrityReport,
@@ -99,6 +105,7 @@ __all__ = [
     "DEFAULT_PREPROCESSING_VERSION",
     "EvaluationInputError",
     "EvaluationMetadata",
+    "ExperimentContractError",
     "FineTuningReadinessError",
     "IntegrityReport",
     "ManifestValidationError",
@@ -130,10 +137,12 @@ __all__ = [
     "compare_evaluation_results",
     "compute_text_content_hash",
     "evaluate_predictions",
+    "experiment_execution_allowed",
     "execute_candidate_training",
     "load_manifest",
     "load_benchmark_lock",
     "load_evaluation_result",
+    "load_experiment_spec",
     "load_finetuning_plan",
     "load_label_ontology",
     "load_model_artifact_manifest",
@@ -146,6 +155,7 @@ __all__ = [
     "package_finetuned_model",
     "verify_dataset_content_hashes",
     "verify_model_artifacts",
+    "validate_experiment_inputs",
     "write_private_jsonl",
     "write_private_finetuning_package",
     "write_private_predictions",

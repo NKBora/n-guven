@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "experimentId": "berturk-text-origin-v1",
+  "adapterId": "berturk",
+  "upstream": {
+    "repository": "dbmdz/bert-base-turkish-cased",
+    "revision": "b6e1de16c983e0f2c70664591ea3f22810072608",
+    "weightsLicense": "MIT"
+  },
+  "benchmark": {"benchmarkId": "text-origin-tr", "version": "v1"},
+  "protocol": {
+    "seeds": [17, 42, 71],
+    "stages": ["linear-probe", "fine-tune"],
+    "primaryValidationMetric": "macroF1",
+    "maxSequenceLength": 512
+  },
+  "acceptance": {
+    "minimumMacroF1": 0.8,
+    "maximumHighConfidenceFalsePositiveRate": 0.05,
+    "maximumP95LatencyMs": 3000
+  },
+  "execution": {
+    "status": "awaiting-reviewed-data",
+    "allowed": false,
+    "resultArtifact": null
+  }
+}

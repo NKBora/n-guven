@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+import json
+from copy import deepcopy
+from pathlib import Path
+
+import pytest
+
+from nguven_evaluation.benchmark import load_benchmark_lock
+from nguven_evaluation.experiments import (
+    DEFAULT_BERTURK_EXPERIMENT_PATH,
+    ExperimentContractError,
+    experiment_execution_allowed,
+    load_experiment_spec,
+    validate_experiment_inputs,
+)
+from nguven_evaluation.model_adapters import BERTURK, MODERNBERT_TR
+
+
+def shared_plan() -> dict:
+    return {
+        "dataset": {
+            "version": "text-origin-tr-v1",
+            "manifestSha256": "1" * 64,
+            "preprocessedSha256": "2" * 64,
+        },
+        "candidates": [
+            {"adapterId": item.adapter_id, "repository": item.repository, "revision": item.revision}
+            for item in (BERTURK, MODERNBERT_TR)
+        ],
+        "protocol": {"seeds": [17, 42, 71], "maxSequenceLength": 512},
+    }
+
+
+def test_berturk_experiment_is_pinned_but_not_yet_claimed() -> None:
+    specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    benchmark = load_benchmark_lock()
+
+    validate_experiment_inputs(specification, plan=shared_plan(), benchmark=benchmark)
+    assert specification["adapterId"] == "berturk"
+    assert specification["protocol"]["seeds"] == [17, 42, 71]
+    assert specification["execution"]["status"] == "awaiting-reviewed-data"
+    assert experiment_execution_allowed(specification, benchmark) is False
+
+
+def test_berturk_experiment_rejects_upstream_drift(tmp_path: Path) -> None:
+    specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    invalid = deepcopy(specification)
+    invalid["upstream"]["revision"] = "0" * 40
+    path = tmp_path / "experiment.json"
+    path.write_text(json.dumps(invalid), encoding="utf-8")
+
+    with pytest.raises(ExperimentContractError, match="upstream identity mismatch"):
+        load_experiment_spec(path)
+
+
+def test_execution_requires_reviewed_materialized_benchmark() -> None:
+    specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    benchmark = load_benchmark_lock()
+
+    with pytest.raises(ExperimentContractError, match="not approved for execution"):
+        validate_experiment_inputs(
+            specification,
+            plan=shared_plan(),
+            benchmark=benchmark,
+            require_execution_ready=True,
+        )
+
+
+def test_experiment_rejects_seed_drift() -> None:
+    specification = load_experiment_spec(DEFAULT_BERTURK_EXPERIMENT_PATH)
+    benchmark = load_benchmark_lock()
+    plan = shared_plan()
+    plan["protocol"]["seeds"] = [17, 42, 99]
+
+    with pytest.raises(ExperimentContractError, match="seed order differs"):
+        validate_experiment_inputs(specification, plan=plan, benchmark=benchmark)
