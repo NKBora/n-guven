@@ -2,9 +2,16 @@
 
 This package provides model-independent, reproducible controls for N-Güven dataset manifests and offline prediction artifacts.
 
-**No benchmark has been performed yet.**
+**The reviewed `text-origin-tr-v1` benchmark is complete.**
 
-No dataset, metric, threshold, license conclusion, or model comparison is recorded as an N-Güven result. ModernBERT-TR and BERTurk remain candidates; neither has been integrated or selected.
+BERTurk and ModernBERT-TR were fine-tuned under the same immutable three-seed
+protocol, calibrated on validation only, and evaluated once on the frozen 1,200-record
+test split. Both passed every acceptance target. Their mean Macro F1 and accuracy were
+equal, so the predeclared mean-inference-latency tie-breaker selected BERTurk for the
+next prototype integration step. This is not production approval or evidence of
+unseen-domain generalization. The canonical report is
+`comparisons/text-origin-tr-v1.json` and the scoped decision is recorded in
+`../../docs/adr/0001-select-berturk-for-text-origin-prototype.md`.
 
 ## Implemented scope
 
@@ -23,6 +30,8 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - Local-only Transformers sequence-classification inference and private prediction JSONL output.
 - A fixed `text-origin-v1` ontology and one shared multi-seed fine-tuning plan for both candidates.
 - Leakage-safe train/validation materialization with the final test split isolated by directory.
+- Completion-gated validation/test inference materialization that keeps the frozen test
+  inaccessible until both comparable candidate experiments are closed.
 - Fail-closed safetensors packaging and variance-preserving candidate comparison reports.
 - A versioned Turkish text benchmark source lock with pinned revisions, licenses,
   generator provenance, balanced sampling targets, and a fail-closed evidence gate.
@@ -73,7 +82,8 @@ published. The manifest, raw input, and preprocessed JSONL files remain private.
 ```text
 ml/evaluation/
 ├── comparisons/
-│   └── schema.json
+│   ├── schema.json
+│   └── text-origin-tr-v1.json
 ├── finetuning/
 │   ├── plan.schema.json
 │   └── record.schema.json
@@ -99,13 +109,18 @@ ml/evaluation/
 └── pyproject.toml
 ```
 
-Generated result files belong under `results/` but must not be described as project evidence until their dataset and protocol have been reviewed.
+Private per-seed results belong under ignored storage. Only the reviewed, text-free
+comparison and evidence hashes are published in the repository.
 
 ## Model artifact and adapter boundary
 
 `models/schema.json` records immutable upstream model and tokenizer revisions, separate weight/code licenses, the required preprocessing version, runtime details, label mapping, artifact sizes, and SHA-256 hashes. Local weights and caches under `models/` are ignored by Git.
 
-The initial adapter registry pins the reviewed upstream identities of `dbmdz/bert-base-turkish-cased` and `ytu-ce-cosmos/modernbert-tr-base`. Their presence is a candidate declaration, not an integration, benchmark result, production approval, or final model selection. Adapters accept only a locally supplied inference backend and never download code or weights.
+The adapter registry pins the reviewed upstream identities of
+`dbmdz/bert-base-turkish-cased` and `ytu-ce-cosmos/modernbert-tr-base`. The completed
+comparison selects BERTurk for prototype integration only; neither local weight bundle
+is committed or approved for production. Adapters accept only a locally supplied
+inference backend and never download code or weights.
 
 After an approved candidate has been fine-tuned for text classification, place its complete local safetensors/tokenizer bundle in an ignored artifact directory and prepare a reviewed manifest. Install the optional runtime only on the offline inference host:
 
@@ -126,7 +141,9 @@ Before loading Transformers, the command verifies every declared local artifact 
 
 ## Fine-tuning and comparison readiness
 
-This repository does not pretrain either model. Both pretrained candidates must be fine-tuned under one immutable plan and evaluated on the same untouched test records. Create that plan only after the reviewed manifest and `tr-text-v1` artifact exist:
+This repository does not pretrain either model. The two pretrained candidates were
+fine-tuned under one immutable plan and evaluated on the same untouched test records.
+The commands below document how the reviewed run is reproduced.
 
 ```bash
 nguven-eval create-finetuning-plan path/to/split-manifest.jsonl \
@@ -203,16 +220,16 @@ reviewed download; subsequent runs can use an explicit local cache.
 
 The BERTurk baseline is frozen in `experiments/berturk-v1.json`: upstream revision,
 three seeds, both adaptation stages, sequence length, and the report's acceptance
-targets are explicit. Its status is `ready` because the reviewed materialization hashes
-match `finetuning/plans/text-origin-tr-v1.json`; this permits execution but does not
-claim a result.
+targets are explicit. Its status is `completed`; its validation-only execution evidence
+is hash-bound under `experiments/evidence/berturk-v1.json`.
 
 ```bash
 nguven-eval validate-experiment experiments/berturk-v1.json
 ```
 
-ModernBERT-TR is frozen independently but must remain byte-for-byte comparable on
-benchmark, seeds, training stages, sequence length, and acceptance thresholds:
+ModernBERT-TR is also `completed` and independently hash-bound. The validation command
+continues to enforce byte-for-byte comparability on benchmark, seeds, training stages,
+sequence length, and acceptance thresholds:
 
 ```bash
 nguven-eval validate-experiment-pair \
@@ -248,6 +265,14 @@ seed, reports population standard deviation and a two-sided 95% t interval, and 
 the report targets (Macro F1 >= 0.80, high-confidence false-positive rate <= 0.05,
 P95 text latency <= 3000 ms). Missing advanced metrics produce
 `insufficient-evidence`, never an implied pass.
+
+The completed comparison reports equal mean Macro F1 (`0.9997222220`) and accuracy
+(`0.9997222222`). BERTurk wins the declared third tie-breaker with `38.4120 ms` mean
+inference time versus `55.2437 ms`; its mean p95 is `45.8162 ms` versus `66.2645 ms`.
+Both candidates pass all frozen targets. BERTurk also records lower mean Brier score,
+ECE, and high-confidence false-positive rate. These results are limited to the reviewed
+source families; near-perfect performance is treated as a shortcut-learning warning,
+not a broad detector claim.
 
 ## Local setup
 
