@@ -1,5 +1,11 @@
 """Reproducible evaluation tooling for N-Güven ML services."""
 
+from nguven_evaluation.benchmark import (
+    BenchmarkContractError,
+    benchmark_evidence_allowed,
+    load_benchmark_lock,
+)
+
 from nguven_evaluation.comparison import (
     ModelComparisonError,
     compare_evaluation_results,
@@ -76,6 +82,7 @@ from nguven_evaluation.splitting import (
 __all__ = [
     "AdapterPrediction",
     "BERTURK",
+    "BenchmarkContractError",
     "CandidateTextModelAdapter",
     "DatasetLeakageError",
     "DatasetInputError",
@@ -102,6 +109,7 @@ __all__ = [
     "VerifiedModelArtifacts",
     "assign_splits",
     "audit_manifest",
+    "benchmark_evidence_allowed",
     "build_preprocessed_records",
     "build_prediction_records",
     "build_finetuning_plan",
@@ -109,6 +117,7 @@ __all__ = [
     "compute_text_content_hash",
     "evaluate_predictions",
     "load_manifest",
+    "load_benchmark_lock",
     "load_evaluation_result",
     "load_finetuning_plan",
     "load_label_ontology",

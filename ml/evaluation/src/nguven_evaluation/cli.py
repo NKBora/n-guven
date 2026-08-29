@@ -8,6 +8,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
+from nguven_evaluation.benchmark import (
+    DEFAULT_BENCHMARK_SCHEMA_PATH,
+    BenchmarkContractError,
+    benchmark_evidence_allowed,
+    load_benchmark_lock,
+)
+
 from nguven_evaluation.dataset_inputs import (
     DEFAULT_INPUT_SCHEMA_PATH,
     DEFAULT_MAX_INPUT_BYTES,
@@ -95,6 +102,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("manifest", type=Path)
     validate_parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA_PATH)
+
+    benchmark_parser = subparsers.add_parser(
+        "validate-benchmark",
+        help="validate a versioned Turkish text benchmark source lock",
+    )
+    benchmark_parser.add_argument("benchmark", type=Path)
+    benchmark_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_BENCHMARK_SCHEMA_PATH
+    )
 
     input_parser = subparsers.add_parser(
         "validate-input",
@@ -292,7 +308,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        if args.command == "create-finetuning-plan":
+        if args.command == "validate-benchmark":
+            benchmark_lock = load_benchmark_lock(args.benchmark, schema_path=args.schema)
+        elif args.command == "create-finetuning-plan":
             load_manifest(args.manifest)
             load_preprocessed_records(args.preprocessed)
             plan = build_finetuning_plan(
@@ -467,6 +485,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 encoding="utf-8",
             )
     except (
+        BenchmarkContractError,
         DatasetLeakageError,
         DatasetInputError,
         DatasetIntegrityError,
@@ -484,7 +503,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(error)
         return 1
 
-    if args.command == "create-finetuning-plan":
+    if args.command == "validate-benchmark":
+        evidence = "enabled" if benchmark_evidence_allowed(benchmark_lock) else "disabled"
+        print(
+            f"Validated benchmark {benchmark_lock['benchmarkId']}:{benchmark_lock['version']} "
+            f"with result evidence {evidence}"
+        )
+    elif args.command == "create-finetuning-plan":
         print(f"Wrote fine-tuning plan {plan['planId']} to {args.output}")
     elif args.command == "prepare-finetuning-data":
         print(

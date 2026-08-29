@@ -24,8 +24,26 @@ No dataset, metric, threshold, license conclusion, or model comparison is record
 - A fixed `text-origin-v1` ontology and one shared multi-seed fine-tuning plan for both candidates.
 - Leakage-safe train/validation materialization with the final test split isolated by directory.
 - Fail-closed safetensors packaging and variance-preserving candidate comparison reports.
+- A versioned Turkish text benchmark source lock with pinned revisions, licenses,
+  generator provenance, balanced sampling targets, and a fail-closed evidence gate.
 
 The package does not download data or model weights, fine-tune models, claim benchmark evidence, or establish production thresholds. It can execute verified local inference after approved fine-tuned artifacts are supplied.
+
+## Turkish text benchmark source lock
+
+`benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than
+committing third-party text. It requires a balanced 12,000-record target, at least two
+synthetic generator families, deterministic 80/10/10 grouping, and explicit license and
+revision metadata. The committed release is intentionally `source-locked`: benchmark
+claims remain disabled until a separately reviewed private materialization binds exact
+manifest and preprocessing hashes.
+
+```bash
+nguven-eval validate-benchmark benchmarks/text-origin-tr-v1.json
+```
+
+This source lock is a reproducibility and governance artifact, not a measured dataset
+release or a performance result.
 
 ## Layout
 

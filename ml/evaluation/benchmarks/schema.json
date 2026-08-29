@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-benchmark-lock:v1",
+  "title": "N-Güven Turkish Text Benchmark Lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkId",
+    "version",
+    "task",
+    "language",
+    "ontologyVersion",
+    "preprocessingVersion",
+    "release",
+    "sampling",
+    "sources"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "benchmarkId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+    "version": {"type": "string", "pattern": "^v[1-9][0-9]*$"},
+    "task": {"const": "turkish-text-origin-classification"},
+    "language": {"const": "tr"},
+    "ontologyVersion": {"const": "text-origin-v1"},
+    "preprocessingVersion": {"const": "tr-text-v1"},
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidenceStatus", "resultsAllowed", "materializedArtifact"],
+      "properties": {
+        "status": {"enum": ["source-locked", "materialized", "retired"]},
+        "evidenceStatus": {"enum": ["not-materialized", "reviewed"]},
+        "resultsAllowed": {"type": "boolean"},
+        "materializedArtifact": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["manifestSha256", "preprocessedSha256", "recordCount"],
+          "properties": {
+            "manifestSha256": {"$ref": "#/$defs/sha256"},
+            "preprocessedSha256": {"$ref": "#/$defs/sha256"},
+            "recordCount": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "targetRecordCount", "labelBalance", "splitRatios", "minimumGeneratorFamilies"],
+      "properties": {
+        "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+        "targetRecordCount": {"type": "integer", "minimum": 1000},
+        "labelBalance": {"const": {"human": 0.5, "synthetic": 0.5}},
+        "splitRatios": {"const": {"train": 0.8, "validation": 0.1, "test": 0.1}},
+        "minimumGeneratorFamilies": {"type": "integer", "minimum": 2}
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceId",
+          "repository",
+          "revision",
+          "configuration",
+          "split",
+          "textField",
+          "label",
+          "license",
+          "sourceUrl",
+          "generatorModel",
+          "generatorFamily",
+          "intendedUse",
+          "eligibility"
+        ],
+        "properties": {
+          "sourceId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+          "repository": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+          "revision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+          "configuration": {"type": ["string", "null"], "minLength": 1},
+          "split": {"type": "string", "minLength": 1, "maxLength": 64},
+          "textField": {"type": "string", "minLength": 1, "maxLength": 128},
+          "label": {"enum": ["human", "synthetic"]},
+          "license": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 128}
+          },
+          "sourceUrl": {"type": "string", "format": "uri", "pattern": "^https://"},
+          "generatorModel": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+          "generatorFamily": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+          "intendedUse": {"type": "string", "minLength": 1, "maxLength": 512},
+          "eligibility": {"const": "benchmark-candidate"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

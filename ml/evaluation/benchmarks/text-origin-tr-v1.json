@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "benchmarkId": "text-origin-tr",
+  "version": "v1",
+  "task": "turkish-text-origin-classification",
+  "language": "tr",
+  "ontologyVersion": "text-origin-v1",
+  "preprocessingVersion": "tr-text-v1",
+  "release": {
+    "status": "source-locked",
+    "evidenceStatus": "not-materialized",
+    "resultsAllowed": false,
+    "materializedArtifact": null
+  },
+  "sampling": {
+    "seed": 20260829,
+    "targetRecordCount": 12000,
+    "labelBalance": {"human": 0.5, "synthetic": 0.5},
+    "splitRatios": {"train": 0.8, "validation": 0.1, "test": 0.1},
+    "minimumGeneratorFamilies": 2
+  },
+  "sources": [
+    {
+      "sourceId": "wikipedia-tr-20231101",
+      "repository": "wikimedia/wikipedia",
+      "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+      "configuration": "20231101.tr",
+      "split": "train",
+      "textField": "text",
+      "label": "human",
+      "license": ["CC-BY-SA-3.0", "GFDL"],
+      "sourceUrl": "https://huggingface.co/datasets/wikimedia/wikipedia",
+      "generatorModel": null,
+      "generatorFamily": null,
+      "intendedUse": "Reviewed human-authored Turkish benchmark candidate; attribution and article-level grouping are mandatory.",
+      "eligibility": "benchmark-candidate"
+    },
+    {
+      "sourceId": "open-conversation-tr-deepseek-v3",
+      "repository": "Vyvo/Open-Conversation-TR",
+      "revision": "ed04ace49560776e07f303c56a96f12a5bf6a107",
+      "configuration": null,
+      "split": "train",
+      "textField": "messages",
+      "label": "synthetic",
+      "license": ["MIT"],
+      "sourceUrl": "https://huggingface.co/datasets/Vyvo/Open-Conversation-TR",
+      "generatorModel": "DeepSeek-V3",
+      "generatorFamily": "deepseek-v3",
+      "intendedUse": "Synthetic Turkish benchmark candidate; only assistant text with documented generation provenance is eligible.",
+      "eligibility": "benchmark-candidate"
+    },
+    {
+      "sourceId": "turkish-cot-minimax-m3",
+      "repository": "AlicanKiraz0/Turkish-CoT-Instruct-Dataset",
+      "revision": "3473e6c6350564d5a7000faf3ff140e9c4b9d1f2",
+      "configuration": null,
+      "split": "train",
+      "textField": "messages",
+      "label": "synthetic",
+      "license": ["Apache-2.0"],
+      "sourceUrl": "https://huggingface.co/datasets/AlicanKiraz0/Turkish-CoT-Instruct-Dataset",
+      "generatorModel": "MiniMax-M3",
+      "generatorFamily": "minimax-m3",
+      "intendedUse": "Synthetic Turkish benchmark candidate; only final answer text is eligible and hidden reasoning must be excluded.",
+      "eligibility": "benchmark-candidate"
+    }
+  ]
+}
