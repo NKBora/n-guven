@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:text-finetuning-execution:v1",
+  "title": "N-Güven Text Fine-tuning Execution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "planId",
+    "planSha256",
+    "adapterId",
+    "upstream",
+    "dataset",
+    "gitCommit",
+    "stages",
+    "selection"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "runId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+    "planId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"},
+    "planSha256": {"$ref": "#/$defs/sha256"},
+    "adapterId": {"enum": ["berturk", "modernbert-tr"]},
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "revision"],
+      "properties": {
+        "repository": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"},
+        "revision": {"type": "string", "pattern": "^[a-f0-9]{40}$"}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "manifestSha256", "preprocessedSha256"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 256},
+        "manifestSha256": {"$ref": "#/$defs/sha256"},
+        "preprocessedSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "gitCommit": {"type": "string", "pattern": "^[a-f0-9]{7,40}$"},
+    "stages": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "seed", "validationMacroF1", "bestEpoch", "trainingSeconds", "artifactDirectory"],
+        "properties": {
+          "stage": {"enum": ["linear-probe", "fine-tune"]},
+          "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+          "validationMacroF1": {"type": "number", "minimum": 0, "maximum": 1},
+          "bestEpoch": {"type": "number", "minimum": 0},
+          "trainingSeconds": {"type": "number", "minimum": 0},
+          "artifactDirectory": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._/-]{1,255}$"}
+        }
+      }
+    },
+    "selection": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["seed", "selectedStage", "validationMacroF1"],
+        "properties": {
+          "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+          "selectedStage": {"enum": ["linear-probe", "fine-tune"]},
+          "validationMacroF1": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

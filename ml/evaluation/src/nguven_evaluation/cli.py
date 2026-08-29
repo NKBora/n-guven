@@ -90,6 +90,12 @@ from nguven_evaluation.splitting import (
     audit_manifest,
 )
 from nguven_evaluation.transformers_backend import LocalTransformersBackend
+from nguven_evaluation.training import (
+    DEFAULT_EXECUTION_SCHEMA_PATH,
+    TrainingExecutionError,
+    TransformersTrainerBackend,
+    execute_candidate_training,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -212,6 +218,24 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
     )
     readiness_parser.add_argument("--ontology", type=Path, default=DEFAULT_ONTOLOGY_PATH)
+
+    train_parser = subparsers.add_parser(
+        "train-text-model",
+        help="run linear-probe and fine-tuning stages without access to test data",
+    )
+    train_parser.add_argument("training_root", type=Path)
+    train_parser.add_argument("--plan", type=Path, required=True)
+    train_parser.add_argument(
+        "--adapter-id", required=True, choices=("berturk", "modernbert-tr")
+    )
+    train_parser.add_argument("--run-id", required=True)
+    train_parser.add_argument("--git-commit", required=True)
+    train_parser.add_argument("--output", type=Path, required=True)
+    train_parser.add_argument("--cache-dir", type=Path)
+    train_parser.add_argument("--allow-network", action="store_true")
+    train_parser.add_argument(
+        "--execution-schema", type=Path, default=DEFAULT_EXECUTION_SCHEMA_PATH
+    )
 
     package_parser = subparsers.add_parser(
         "package-finetuned-model",
@@ -350,6 +374,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 record_schema_path=args.record_schema,
             )
             write_private_finetuning_package(readiness_package, args.output)
+        elif args.command == "train-text-model":
+            training_execution = execute_candidate_training(
+                plan_path=args.plan,
+                training_root=args.training_root,
+                adapter_id=args.adapter_id,
+                run_id=args.run_id,
+                git_commit=args.git_commit,
+                output_root=args.output,
+                backend=TransformersTrainerBackend(
+                    allow_network=args.allow_network,
+                    cache_dir=args.cache_dir,
+                ),
+                execution_schema_path=args.execution_schema,
+            )
         elif args.command == "package-finetuned-model":
             if args.output.resolve(strict=False).is_relative_to(
                 args.artifact_root.resolve(strict=False)
@@ -498,6 +536,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ModelPackagingError,
         OfflinePredictionError,
         OfflinePreprocessingError,
+        TrainingExecutionError,
         ValueError,
     ) as error:
         print(error)
@@ -515,6 +554,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Prepared {readiness_package.summary['recordCount']} fine-tuning record(s) "
             f"with an isolated test split at {args.output}"
+        )
+    elif args.command == "train-text-model":
+        print(
+            f"Completed {len(training_execution['stages'])} training stage(s) for "
+            f"{training_execution['adapterId']} at {args.output}"
         )
     elif args.command == "package-finetuned-model":
         print(

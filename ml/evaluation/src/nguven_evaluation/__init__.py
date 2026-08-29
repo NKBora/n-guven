@@ -78,6 +78,15 @@ from nguven_evaluation.splitting import (
     assign_splits,
     audit_manifest,
 )
+from nguven_evaluation.training import (
+    TrainingExecutionError,
+    TrainingStageRequest,
+    TrainingStageResult,
+    TransformersTrainerBackend,
+    build_training_requests,
+    execute_candidate_training,
+    load_training_splits,
+)
 
 __all__ = [
     "AdapterPrediction",
@@ -106,6 +115,10 @@ __all__ = [
     "SplitRatios",
     "TextPreprocessingError",
     "TextModelAdapter",
+    "TrainingExecutionError",
+    "TrainingStageRequest",
+    "TrainingStageResult",
+    "TransformersTrainerBackend",
     "VerifiedModelArtifacts",
     "assign_splits",
     "audit_manifest",
@@ -113,9 +126,11 @@ __all__ = [
     "build_preprocessed_records",
     "build_prediction_records",
     "build_finetuning_plan",
+    "build_training_requests",
     "compare_evaluation_results",
     "compute_text_content_hash",
     "evaluate_predictions",
+    "execute_candidate_training",
     "load_manifest",
     "load_benchmark_lock",
     "load_evaluation_result",
@@ -124,6 +139,7 @@ __all__ = [
     "load_model_artifact_manifest",
     "load_dataset_input",
     "load_predictions",
+    "load_training_splits",
     "load_preprocessed_records",
     "preprocess_turkish_text",
     "prepare_finetuning_package",

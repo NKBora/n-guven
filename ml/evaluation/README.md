@@ -153,6 +153,27 @@ nguven-eval compare-models \
 
 The comparison requires identical dataset identity and seed coverage. It ranks mean macro F1 first, mean accuracy second, and mean inference time third while retaining population standard deviation and every prediction artifact hash.
 
+## Reproducible candidate training
+
+Install the isolated training runtime, then pass only the package's `training/`
+directory. The command fails if that directory contains test or unexpected material.
+
+```bash
+python -m pip install -e ".[training]"
+nguven-eval train-text-model path/to/package/training \
+  --plan path/to/plan.json \
+  --adapter-id berturk \
+  --run-id berturk-text-origin-v1 \
+  --git-commit "$(git rev-parse HEAD)" \
+  --output path/to/private-runs/berturk-v1
+```
+
+Every seed first runs a frozen-encoder linear probe and then low-learning-rate
+fine-tuning under the same immutable protocol. Selection uses validation Macro F1;
+ties prefer the simpler linear probe. Pinned upstream revisions are loaded with remote
+code disabled and safetensors required. Network access is opt-in only for the initial
+reviewed download; subsequent runs can use an explicit local cache.
+
 ## Local setup
 
 Python 3.12 is required.
