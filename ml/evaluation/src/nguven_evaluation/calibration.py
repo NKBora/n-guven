@@ -57,7 +57,17 @@ def fit_temperature_calibration(
     actual, probabilities = _aligned_binary_inputs(
         manifest_records, prediction_records, required_split="validation"
     )
-    temperatures = [math.exp(math.log(0.05) + index * (math.log(10 / 0.05) / 400)) for index in range(401)]
+    temperatures = sorted(
+        {
+            1.0,
+            *(
+                math.exp(
+                    math.log(0.05) + index * (math.log(10 / 0.05) / 400)
+                )
+                for index in range(401)
+            ),
+        }
+    )
     temperature = min(
         temperatures,
         key=lambda candidate: _negative_log_likelihood(

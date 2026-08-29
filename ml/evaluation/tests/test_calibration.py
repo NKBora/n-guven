@@ -66,6 +66,43 @@ def test_temperature_fit_rejects_test_records() -> None:
         )
 
 
+def test_temperature_fit_can_select_identity_calibration() -> None:
+    manifest: list[dict] = []
+    predictions: list[dict] = []
+    for label in ("human", "synthetic"):
+        for index in range(10):
+            correct = index < 8
+            predicted = label if correct else (
+                "synthetic" if label == "human" else "human"
+            )
+            record_id = f"{label}-{index}"
+            manifest.append(
+                {"id": record_id, "label": label, "split": "validation"}
+            )
+            predictions.append(
+                {
+                    "id": record_id,
+                    "predictedLabel": predicted,
+                    "score": 0.8,
+                    "inferenceMs": 4.0,
+                }
+            )
+
+    artifact = fit_temperature_calibration(
+        manifest,
+        predictions,
+        model_name="berturk",
+        model_version="v1",
+        manifest_sha256="a" * 64,
+        predictions_sha256="b" * 64,
+    )
+
+    assert artifact["temperature"] == 1.0
+    assert artifact["metrics"]["negativeLogLikelihoodAfter"] == pytest.approx(
+        artifact["metrics"]["negativeLogLikelihoodBefore"]
+    )
+
+
 def test_binary_probability_uses_predicted_label_confidence() -> None:
     assert predicted_synthetic_probability(
         {"predictedLabel": "synthetic", "score": 0.9}
