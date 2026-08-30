@@ -66,6 +66,11 @@ from nguven_evaluation.image_model_adapters import (
     ImagePrediction,
     load_image_candidate_registry,
 )
+from nguven_evaluation.image_benchmark import (
+    ImageBenchmarkContractError,
+    image_benchmark_evidence_allowed,
+    load_image_benchmark_lock,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -148,6 +153,7 @@ __all__ = [
     "IntegrityReport",
     "ImageDatasetInputError",
     "ImageCandidateDescriptor",
+    "ImageBenchmarkContractError",
     "ImageModelAdapterError",
     "ImagePrediction",
     "ImagePreprocessingError",
@@ -201,7 +207,9 @@ __all__ = [
     "load_dataset_input",
     "load_image_dataset_inputs",
     "load_image_candidate_registry",
+    "load_image_benchmark_lock",
     "load_predictions",
+    "image_benchmark_evidence_allowed",
     "load_training_splits",
     "load_preprocessed_records",
     "preprocess_turkish_text",

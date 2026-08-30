@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://n-guven.example/schemas/image-benchmark-lock-v1.json",
+  "title": "N-Güven frozen image benchmark lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkId",
+    "version",
+    "task",
+    "preprocessingVersion",
+    "candidateRegistrySha256",
+    "source",
+    "protocol",
+    "release"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "image-benchmark-lock-v1" },
+    "benchmarkId": { "const": "image-origin-robustness" },
+    "version": { "const": "v1" },
+    "task": { "const": "real-vs-ai-generated-static-image-classification" },
+    "preprocessingVersion": { "const": "image-preprocessing-v1" },
+    "candidateRegistrySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision",
+        "sourceUrl",
+        "license",
+        "subsets",
+        "artifacts",
+        "excludedTrainingRepositories"
+      ],
+      "properties": {
+        "repository": { "const": "thu-coai/Syncred-Bench" },
+        "revision": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "sourceUrl": { "const": "https://huggingface.co/datasets/thu-coai/Syncred-Bench" },
+        "license": { "const": "Apache-2.0" },
+        "subsets": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["configuration", "split", "label", "recordCount"],
+            "properties": {
+              "configuration": { "enum": ["fp_450", "syncred_600"] },
+              "split": { "const": "train" },
+              "label": { "enum": ["human", "synthetic"] },
+              "recordCount": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sizeBytes", "sha256"],
+            "properties": {
+              "path": { "type": "string", "pattern": "^[a-z0-9_/-]+\\.parquet$" },
+              "sizeBytes": { "type": "integer", "minimum": 1 },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        },
+        "excludedTrainingRepositories": {
+          "type": "array",
+          "contains": { "const": "competitions/aiornot" },
+          "minContains": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 3 }
+        }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frozenTest",
+        "recordCount",
+        "transformations",
+        "metrics",
+        "selectionOrder",
+        "acceptanceTargets"
+      ],
+      "properties": {
+        "frozenTest": { "const": true },
+        "recordCount": { "const": 1050 },
+        "transformations": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "canonical",
+              "jpeg-q90",
+              "jpeg-q70",
+              "resize-75",
+              "center-crop-90",
+              "screenshot-v1"
+            ]
+          }
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "contains": { "const": "macroF1" },
+          "items": {
+            "enum": [
+              "macroF1",
+              "accuracy",
+              "prAuc",
+              "brierScore",
+              "highConfidenceFalsePositiveRate",
+              "p95InferenceMs",
+              "transformationMacroF1"
+            ]
+          }
+        },
+        "selectionOrder": {
+          "prefixItems": [
+            { "const": "worstTransformationMacroF1" },
+            { "const": "macroF1" },
+            { "const": "highConfidenceFalsePositiveRate" },
+            { "const": "p95InferenceMs" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "acceptanceTargets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimumMacroF1",
+            "minimumWorstTransformationMacroF1",
+            "maximumHighConfidenceFalsePositiveRate",
+            "maximumP95InferenceMs"
+          ],
+          "properties": {
+            "minimumMacroF1": { "type": "number", "minimum": 0, "maximum": 1 },
+            "minimumWorstTransformationMacroF1": { "type": "number", "minimum": 0, "maximum": 1 },
+            "maximumHighConfidenceFalsePositiveRate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "maximumP95InferenceMs": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidenceStatus", "resultsAllowed", "materializedArtifact"],
+      "properties": {
+        "status": { "enum": ["source-locked", "materialized"] },
+        "evidenceStatus": { "enum": ["not-materialized", "reviewed"] },
+        "resultsAllowed": { "type": "boolean" },
+        "materializedArtifact": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "manifestSha256",
+                "preprocessedManifestSha256",
+                "recordCount",
+                "variantCount",
+                "materializedAt"
+              ],
+              "properties": {
+                "manifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "preprocessedManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "recordCount": { "const": 1050 },
+                "variantCount": { "const": 6300 },
+                "materializedAt": { "type": "string", "format": "date-time" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -82,6 +82,13 @@ from nguven_evaluation.image_model_adapters import (
     ImageModelAdapterError,
     load_image_candidate_registry,
 )
+from nguven_evaluation.image_benchmark import (
+    DEFAULT_IMAGE_BENCHMARK_PATH,
+    DEFAULT_IMAGE_BENCHMARK_SCHEMA_PATH,
+    ImageBenchmarkContractError,
+    image_benchmark_evidence_allowed,
+    load_image_benchmark_lock,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -292,6 +299,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     image_candidates_parser.add_argument(
         "--schema", type=Path, default=DEFAULT_IMAGE_CANDIDATES_SCHEMA_PATH
+    )
+
+    image_benchmark_parser = subparsers.add_parser(
+        "validate-image-benchmark",
+        help="validate the frozen external image benchmark and evidence gate",
+    )
+    image_benchmark_parser.add_argument(
+        "benchmark", type=Path, default=DEFAULT_IMAGE_BENCHMARK_PATH, nargs="?"
+    )
+    image_benchmark_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_BENCHMARK_SCHEMA_PATH
+    )
+    image_benchmark_parser.add_argument(
+        "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
     )
 
     integrity_parser = subparsers.add_parser(
@@ -779,6 +800,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.registry,
                 schema_path=args.schema,
             )
+        elif args.command == "validate-image-benchmark":
+            image_benchmark_lock = load_image_benchmark_lock(
+                args.benchmark,
+                schema_path=args.schema,
+                candidate_registry_path=args.candidate_registry,
+            )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -869,6 +896,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ImageDatasetInputError,
         ImagePreprocessingError,
         ImageModelAdapterError,
+        ImageBenchmarkContractError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -961,6 +989,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             "Validated reviewed image candidates: "
             + ", ".join(candidate.adapter_id for candidate in image_candidates)
+        )
+    elif args.command == "validate-image-benchmark":
+        evidence = (
+            "enabled" if image_benchmark_evidence_allowed(image_benchmark_lock) else "disabled"
+        )
+        print(
+            f"Validated {image_benchmark_lock['benchmarkId']}:"
+            f"{image_benchmark_lock['version']} with result evidence {evidence}"
         )
     elif args.command == "verify-content-hashes":
         print(

@@ -78,6 +78,21 @@ The registry pins full 40-character upstream revisions and Apache-2.0 weight lic
 Runtime materialization must use safetensors, `local_files_only=True`, and
 `trust_remote_code=False`; this commit does not download or commit model weights.
 
+The frozen external benchmark is source-locked to the Apache-2.0 SynCred-Bench
+revision recorded in `image/benchmarks/image-origin-robustness-v1.json`. Its 450 real
+negative and 600 synthetic misinformation images are outside the candidates' declared
+AI-or-Not training source. Each of the 1,050 originals must be evaluated in all six
+preprocessing/robustness forms (6,300 predictions per candidate). Selection prioritizes
+the worst transformation Macro F1 before overall Macro F1, false positives, and latency.
+
+```bash
+nguven-eval validate-image-benchmark
+```
+
+The committed lock is intentionally `source-locked` with result evidence disabled.
+Downloading and hashing the roughly 1.46 GB pinned source, materializing the private
+images, and completing both model runs are required before that gate may be reviewed.
+
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than

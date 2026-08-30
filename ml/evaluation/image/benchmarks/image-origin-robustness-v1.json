@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "image-benchmark-lock-v1",
+  "benchmarkId": "image-origin-robustness",
+  "version": "v1",
+  "task": "real-vs-ai-generated-static-image-classification",
+  "preprocessingVersion": "image-preprocessing-v1",
+  "candidateRegistrySha256": "aec61473f29ff021f93e5aeb36cff899fda59de08d14cf70da399e0eb001c6e5",
+  "source": {
+    "repository": "thu-coai/Syncred-Bench",
+    "revision": "2747c4b2c901b24865c16c4f8c73a220675f9820",
+    "sourceUrl": "https://huggingface.co/datasets/thu-coai/Syncred-Bench",
+    "license": "Apache-2.0",
+    "subsets": [
+      {
+        "configuration": "fp_450",
+        "split": "train",
+        "label": "human",
+        "recordCount": 450
+      },
+      {
+        "configuration": "syncred_600",
+        "split": "train",
+        "label": "synthetic",
+        "recordCount": 600
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "fp_450/train-00000-of-00001.parquet",
+        "sizeBytes": 279563197,
+        "sha256": "f143dae8da2fe1f157a843fe685cb93a5c810f1b7bab1ef75ce6acf1f1f204f9"
+      },
+      {
+        "path": "syncred_600/train-00000-of-00003.parquet",
+        "sizeBytes": 426940373,
+        "sha256": "eefd93366f31828a32b7e55d3d3c684e3ab431e0e4c176d4c333cc639104adea"
+      },
+      {
+        "path": "syncred_600/train-00001-of-00003.parquet",
+        "sizeBytes": 389621289,
+        "sha256": "60d9d731f1b1cb0a288a031159012080adee3743b8ba9a8800879e10ae6bfa32"
+      },
+      {
+        "path": "syncred_600/train-00002-of-00003.parquet",
+        "sizeBytes": 364964081,
+        "sha256": "746f04959ec53a3e32f7b5929760b1bf1805abb63a05872124d603c964226077"
+      }
+    ],
+    "excludedTrainingRepositories": ["competitions/aiornot"]
+  },
+  "protocol": {
+    "frozenTest": true,
+    "recordCount": 1050,
+    "transformations": [
+      "canonical",
+      "jpeg-q90",
+      "jpeg-q70",
+      "resize-75",
+      "center-crop-90",
+      "screenshot-v1"
+    ],
+    "metrics": [
+      "macroF1",
+      "accuracy",
+      "prAuc",
+      "brierScore",
+      "highConfidenceFalsePositiveRate",
+      "p95InferenceMs",
+      "transformationMacroF1"
+    ],
+    "selectionOrder": [
+      "worstTransformationMacroF1",
+      "macroF1",
+      "highConfidenceFalsePositiveRate",
+      "p95InferenceMs"
+    ],
+    "acceptanceTargets": {
+      "minimumMacroF1": 0.8,
+      "minimumWorstTransformationMacroF1": 0.7,
+      "maximumHighConfidenceFalsePositiveRate": 0.05,
+      "maximumP95InferenceMs": 3000.0
+    }
+  },
+  "release": {
+    "status": "source-locked",
+    "evidenceStatus": "not-materialized",
+    "resultsAllowed": false,
+    "materializedArtifact": null
+  }
+}

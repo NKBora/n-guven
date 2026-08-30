@@ -98,6 +98,7 @@ jobs:
           nguven-eval validate-image-input --help >/dev/null
           nguven-eval preprocess-image --help >/dev/null
           nguven-eval validate-image-candidates --help >/dev/null
+          nguven-eval validate-image-benchmark --help >/dev/null
           nguven-eval verify-content-hashes --help >/dev/null
           nguven-eval preprocess-text --help >/dev/null
           nguven-eval predict-text --help >/dev/null
