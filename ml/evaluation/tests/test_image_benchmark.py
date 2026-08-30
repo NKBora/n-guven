@@ -28,6 +28,7 @@ def test_repository_lock_is_external_frozen_and_evidence_gated() -> None:
     assert lock["protocol"]["frozenTest"] is True
     assert lock["protocol"]["recordCount"] == 1050
     assert "competitions/aiornot" in lock["source"]["excludedTrainingRepositories"]
+    assert "CIFAKE" in lock["source"]["excludedTrainingRepositories"]
     assert image_benchmark_evidence_allowed(lock) is False
 
 

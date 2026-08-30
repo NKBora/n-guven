@@ -29,11 +29,16 @@ def test_registry_pins_complete_reviewed_candidate_pair() -> None:
 
     assert [candidate.adapter_id for candidate in candidates] == [
         "siglip2-aiornot",
-        "swin-aiornot",
+        "vit-cifake",
     ]
     assert all(len(candidate.revision) == 40 for candidate in candidates)
     assert all(candidate.weights_license == "Apache-2.0" for candidate in candidates)
     assert all(candidate.normalized_labels == {0: "human", 1: "synthetic"} for candidate in candidates)
+    assert all(
+        {path for path, _, _ in candidate.artifacts}
+        == {"config.json", "preprocessor_config.json", "model.safetensors"}
+        for candidate in candidates
+    )
 
 
 @pytest.mark.parametrize("candidate_index", [0, 1])

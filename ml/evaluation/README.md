@@ -64,19 +64,20 @@ nguven-eval preprocess-image path/to/private-images.jsonl \
   --output image/preprocessed/private-run
 ```
 
-The first benchmark pair compares SigLIP2 and Swin Tiny checkpoints under one adapter
-contract. Both upstream checkpoints were trained from `competitions/aiornot`; this
-shared source is recorded as a shortcut-risk and neither model may be selected from
-its model-card score. Selection requires the upcoming frozen, source-separated
-external benchmark and per-transformation robustness results.
+The first benchmark pair compares SigLIP2 and ViT checkpoints under one adapter
+contract. Their declared training sources are AI-or-Not and CIFAKE respectively; both
+are excluded from the external test source. Neither model may be selected from its
+model-card score. Selection requires the frozen, source-separated external benchmark
+and per-transformation robustness results.
 
 ```bash
 nguven-eval validate-image-candidates
 ```
 
-The registry pins full 40-character upstream revisions and Apache-2.0 weight licenses.
-Runtime materialization must use safetensors, `local_files_only=True`, and
-`trust_remote_code=False`; this commit does not download or commit model weights.
+The registry pins full 40-character upstream revisions, Apache-2.0 weight licenses,
+and the exact size and SHA-256 of every allowed config, processor, and safetensors
+artifact. Runtime materialization must use `local_files_only=True` and
+`trust_remote_code=False`; pickle-based `.bin` weights are not accepted.
 
 The frozen external benchmark is source-locked to the Apache-2.0 SynCred-Bench
 revision recorded in `image/benchmarks/image-origin-robustness-v1.json`. Its 450 real

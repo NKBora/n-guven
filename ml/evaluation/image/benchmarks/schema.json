@@ -72,8 +72,10 @@
         },
         "excludedTrainingRepositories": {
           "type": "array",
-          "contains": { "const": "competitions/aiornot" },
-          "minContains": 1,
+          "allOf": [
+            { "contains": { "const": "competitions/aiornot" } },
+            { "contains": { "const": "CIFAKE" } }
+          ],
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 3 }
         }

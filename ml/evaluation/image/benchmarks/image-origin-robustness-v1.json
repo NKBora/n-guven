@@ -4,7 +4,7 @@
   "version": "v1",
   "task": "real-vs-ai-generated-static-image-classification",
   "preprocessingVersion": "image-preprocessing-v1",
-  "candidateRegistrySha256": "aec61473f29ff021f93e5aeb36cff899fda59de08d14cf70da399e0eb001c6e5",
+  "candidateRegistrySha256": "d4429da752f4327469a3086c5dbed0702f151fe660f818d853b7b5f6c9549bdc",
   "source": {
     "repository": "thu-coai/Syncred-Bench",
     "revision": "2747c4b2c901b24865c16c4f8c73a220675f9820",
@@ -46,7 +46,7 @@
         "sha256": "746f04959ec53a3e32f7b5929760b1bf1805abb63a05872124d603c964226077"
       }
     ],
-    "excludedTrainingRepositories": ["competitions/aiornot"]
+    "excludedTrainingRepositories": ["competitions/aiornot", "CIFAKE"]
   },
   "protocol": {
     "frozenTest": true,

@@ -37,6 +37,7 @@ class ImageCandidateDescriptor:
     architecture: str
     upstream_labels: Mapping[int, str]
     normalized_labels: Mapping[int, str]
+    artifacts: tuple[tuple[str, int, str], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,11 +61,11 @@ REVIEWED_CANDIDATES: Mapping[str, tuple[str, str, str, str]] = {
         "Apache-2.0",
         "SiglipForImageClassification",
     ),
-    "swin-aiornot": (
-        "Nahrawy/AIorNot",
-        "569e9f0798e4b20f10c3ec408e32c2316b9fa0bb",
+    "vit-cifake": (
+        "capcheck/ai-image-detection",
+        "a6661e07d38f1a097bba07ca9415538819278f09",
         "Apache-2.0",
-        "SwinForImageClassification",
+        "ViTForImageClassification",
     ),
 }
 
@@ -120,6 +121,10 @@ def load_image_candidate_registry(
                 architecture=actual[3],
                 upstream_labels={int(key): str(value) for key, value in candidate["upstreamLabels"].items()},
                 normalized_labels={int(key): str(value) for key, value in candidate["normalizedLabels"].items()},
+                artifacts=tuple(
+                    (str(item["path"]), int(item["sizeBytes"]), str(item["sha256"]))
+                    for item in candidate["artifacts"]
+                ),
             )
         )
 

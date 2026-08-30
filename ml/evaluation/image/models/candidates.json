@@ -2,10 +2,10 @@
   "schemaVersion": "image-model-candidates-v1",
   "benchmarkId": "image-origin-robustness-v1",
   "preprocessingVersion": "image-preprocessing-v1",
-  "sharedTrainingSource": {
-    "repository": "competitions/aiornot",
-    "risk": "Both upstream checkpoints were trained on the same public AI-or-Not source, so agreement can reflect shared dataset shortcuts rather than generalization.",
-    "requiredControl": "Selection requires a frozen, source-separated external benchmark that excludes AI-or-Not records and reports every robustness transformation independently."
+  "trainingSourceSeparation": {
+    "repositories": ["competitions/aiornot", "CIFAKE"],
+    "risk": "Each upstream checkpoint can still learn source-specific shortcuts, even though the two declared fine-tuning datasets are different.",
+    "requiredControl": "Selection requires a frozen external benchmark that excludes both declared training sources and reports every robustness transformation independently."
   },
   "candidates": [
     {
@@ -31,17 +31,34 @@
         "localFilesOnly": true
       },
       "upstreamLabels": { "0": "Real", "1": "AI" },
-      "normalizedLabels": { "0": "human", "1": "synthetic" }
+      "normalizedLabels": { "0": "human", "1": "synthetic" },
+      "artifacts": [
+        {
+          "path": "config.json",
+          "sizeBytes": 1103,
+          "sha256": "9935d1f0cb0ec5bae20884d569c8e5d181f4cfc3c757e80847e1e272ddc10cba"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "sizeBytes": 394,
+          "sha256": "9b36b57ebaf20f09bf4c22100ccc21877ea6bfe5aead0c00c59f8af8ccefacfc"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 371567992,
+          "sha256": "8560c44d0f9fbe9a939a3dbbff4c2d88047b073beeb1410e7afc2b567e6628f4"
+        }
+      ]
     },
     {
-      "adapterId": "swin-aiornot",
-      "displayName": "AIorNot Swin Tiny",
-      "provider": "Nahrawy",
-      "architecture": "SwinForImageClassification",
+      "adapterId": "vit-cifake",
+      "displayName": "CapCheck AI Image Detection ViT",
+      "provider": "CapCheck",
+      "architecture": "ViTForImageClassification",
       "upstream": {
-        "repository": "Nahrawy/AIorNot",
-        "revision": "569e9f0798e4b20f10c3ec408e32c2316b9fa0bb",
-        "sourceUrl": "https://huggingface.co/Nahrawy/AIorNot"
+        "repository": "capcheck/ai-image-detection",
+        "revision": "a6661e07d38f1a097bba07ca9415538819278f09",
+        "sourceUrl": "https://huggingface.co/capcheck/ai-image-detection"
       },
       "weightsLicense": {
         "spdxId": "Apache-2.0",
@@ -55,8 +72,25 @@
         "trustRemoteCode": false,
         "localFilesOnly": true
       },
-      "upstreamLabels": { "0": "real", "1": "ai" },
-      "normalizedLabels": { "0": "human", "1": "synthetic" }
+      "upstreamLabels": { "0": "REAL", "1": "FAKE" },
+      "normalizedLabels": { "0": "human", "1": "synthetic" },
+      "artifacts": [
+        {
+          "path": "config.json",
+          "sizeBytes": 710,
+          "sha256": "387db82fa816d35c202b48359f6e91ee951990d77ed67fbcbe408e5f440071b9"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "sizeBytes": 351,
+          "sha256": "445c77049d082004aa07593344d5e1f521f1198228bf586196f70ce7ae021414"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 343223968,
+          "sha256": "4f5d0d4e8e6475faccca9385a2869648bb1f18d3f64c0239ad2bca909d3adc50"
+        }
+      ]
     }
   ]
 }
