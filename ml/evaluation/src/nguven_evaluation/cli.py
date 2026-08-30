@@ -76,6 +76,12 @@ from nguven_evaluation.image_preprocessing import (
     ImagePreprocessingError,
     write_preprocessed_image_dataset,
 )
+from nguven_evaluation.image_model_adapters import (
+    DEFAULT_IMAGE_CANDIDATES_PATH,
+    DEFAULT_IMAGE_CANDIDATES_SCHEMA_PATH,
+    ImageModelAdapterError,
+    load_image_candidate_registry,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -275,6 +281,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-total-bytes",
         type=int,
         default=DEFAULT_MAX_TOTAL_IMAGE_BYTES,
+    )
+
+    image_candidates_parser = subparsers.add_parser(
+        "validate-image-candidates",
+        help="validate the immutable reviewed image detector pair",
+    )
+    image_candidates_parser.add_argument(
+        "registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH, nargs="?"
+    )
+    image_candidates_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_CANDIDATES_SCHEMA_PATH
     )
 
     integrity_parser = subparsers.add_parser(
@@ -757,6 +774,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.output,
                 schema_path=args.output_schema,
             )
+        elif args.command == "validate-image-candidates":
+            image_candidates = load_image_candidate_registry(
+                args.registry,
+                schema_path=args.schema,
+            )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -846,6 +868,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         FineTuningReadinessError,
         ImageDatasetInputError,
         ImagePreprocessingError,
+        ImageModelAdapterError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -933,6 +956,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Wrote {len(image_variants)} image variant(s) for "
             f"{len(verified_images)} input(s) to {args.output}"
+        )
+    elif args.command == "validate-image-candidates":
+        print(
+            "Validated reviewed image candidates: "
+            + ", ".join(candidate.adapter_id for candidate in image_candidates)
         )
     elif args.command == "verify-content-hashes":
         print(

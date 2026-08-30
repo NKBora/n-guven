@@ -59,6 +59,13 @@ from nguven_evaluation.image_preprocessing import (
     build_image_variants,
     write_preprocessed_image_dataset,
 )
+from nguven_evaluation.image_model_adapters import (
+    CandidateImageModelAdapter,
+    ImageCandidateDescriptor,
+    ImageModelAdapterError,
+    ImagePrediction,
+    load_image_candidate_registry,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -127,6 +134,7 @@ __all__ = [
     "BERTURK",
     "BenchmarkContractError",
     "CandidateTextModelAdapter",
+    "CandidateImageModelAdapter",
     "CalibrationError",
     "DatasetLeakageError",
     "DatasetInputError",
@@ -139,6 +147,9 @@ __all__ = [
     "FineTuningReadinessError",
     "IntegrityReport",
     "ImageDatasetInputError",
+    "ImageCandidateDescriptor",
+    "ImageModelAdapterError",
+    "ImagePrediction",
     "ImagePreprocessingError",
     "ImageVariant",
     "InferenceDataError",
@@ -189,6 +200,7 @@ __all__ = [
     "load_model_artifact_manifest",
     "load_dataset_input",
     "load_image_dataset_inputs",
+    "load_image_candidate_registry",
     "load_predictions",
     "load_training_splits",
     "load_preprocessed_records",

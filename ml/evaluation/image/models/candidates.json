@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "image-model-candidates-v1",
+  "benchmarkId": "image-origin-robustness-v1",
+  "preprocessingVersion": "image-preprocessing-v1",
+  "sharedTrainingSource": {
+    "repository": "competitions/aiornot",
+    "risk": "Both upstream checkpoints were trained on the same public AI-or-Not source, so agreement can reflect shared dataset shortcuts rather than generalization.",
+    "requiredControl": "Selection requires a frozen, source-separated external benchmark that excludes AI-or-Not records and reports every robustness transformation independently."
+  },
+  "candidates": [
+    {
+      "adapterId": "siglip2-aiornot",
+      "displayName": "AIorNot SigLIP2",
+      "provider": "prithivMLmods",
+      "architecture": "SiglipForImageClassification",
+      "upstream": {
+        "repository": "prithivMLmods/AIorNot-SigLIP2",
+        "revision": "f4e6a281725e8dfb11a1d8c959b69737bba1e91d",
+        "sourceUrl": "https://huggingface.co/prithivMLmods/AIorNot-SigLIP2"
+      },
+      "weightsLicense": {
+        "spdxId": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0"
+      },
+      "runtime": {
+        "framework": "transformers",
+        "modelClass": "AutoModelForImageClassification",
+        "processorClass": "AutoImageProcessor",
+        "artifactFormat": "safetensors",
+        "trustRemoteCode": false,
+        "localFilesOnly": true
+      },
+      "upstreamLabels": { "0": "Real", "1": "AI" },
+      "normalizedLabels": { "0": "human", "1": "synthetic" }
+    },
+    {
+      "adapterId": "swin-aiornot",
+      "displayName": "AIorNot Swin Tiny",
+      "provider": "Nahrawy",
+      "architecture": "SwinForImageClassification",
+      "upstream": {
+        "repository": "Nahrawy/AIorNot",
+        "revision": "569e9f0798e4b20f10c3ec408e32c2316b9fa0bb",
+        "sourceUrl": "https://huggingface.co/Nahrawy/AIorNot"
+      },
+      "weightsLicense": {
+        "spdxId": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0"
+      },
+      "runtime": {
+        "framework": "transformers",
+        "modelClass": "AutoModelForImageClassification",
+        "processorClass": "AutoImageProcessor",
+        "artifactFormat": "safetensors",
+        "trustRemoteCode": false,
+        "localFilesOnly": true
+      },
+      "upstreamLabels": { "0": "real", "1": "ai" },
+      "normalizedLabels": { "0": "human", "1": "synthetic" }
+    }
+  ]
+}

@@ -40,6 +40,8 @@ unseen-domain generalization. The canonical report is
   intervals across seeds.
 - Local-only image input verification with bounded manifests, safe relative paths,
   symbolic-link isolation, byte-size limits, and SHA-256 integrity checks before decode.
+- An immutable Apache-2.0 image candidate pair with reviewed Hugging Face revisions,
+  normalized labels, local-only safetensors policy, and remote code disabled.
 
 The package downloads data only through the explicit hash-verified materialization
 command and model weights only through the opt-in training command. It does not make
@@ -61,6 +63,20 @@ nguven-eval preprocess-image path/to/private-images.jsonl \
   --image-root path/to/private-images \
   --output image/preprocessed/private-run
 ```
+
+The first benchmark pair compares SigLIP2 and Swin Tiny checkpoints under one adapter
+contract. Both upstream checkpoints were trained from `competitions/aiornot`; this
+shared source is recorded as a shortcut-risk and neither model may be selected from
+its model-card score. Selection requires the upcoming frozen, source-separated
+external benchmark and per-transformation robustness results.
+
+```bash
+nguven-eval validate-image-candidates
+```
+
+The registry pins full 40-character upstream revisions and Apache-2.0 weight licenses.
+Runtime materialization must use safetensors, `local_files_only=True`, and
+`trust_remote_code=False`; this commit does not download or commit model weights.
 
 ## Turkish text benchmark source lock
 

@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://n-guven.example/schemas/image-model-candidates-v1.json",
+  "title": "N-Güven reviewed image model candidates",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchmarkId",
+    "preprocessingVersion",
+    "sharedTrainingSource",
+    "candidates"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "image-model-candidates-v1" },
+    "benchmarkId": { "const": "image-origin-robustness-v1" },
+    "preprocessingVersion": { "const": "image-preprocessing-v1" },
+    "sharedTrainingSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "risk", "requiredControl"],
+      "properties": {
+        "repository": { "const": "competitions/aiornot" },
+        "risk": { "type": "string", "minLength": 20, "maxLength": 500 },
+        "requiredControl": { "type": "string", "minLength": 20, "maxLength": 500 }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapterId",
+        "displayName",
+        "provider",
+        "architecture",
+        "upstream",
+        "weightsLicense",
+        "runtime",
+        "upstreamLabels",
+        "normalizedLabels"
+      ],
+      "properties": {
+        "adapterId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+        "displayName": { "type": "string", "minLength": 3, "maxLength": 100 },
+        "provider": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "architecture": { "enum": ["SiglipForImageClassification", "SwinForImageClassification"] },
+        "upstream": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "revision", "sourceUrl"],
+          "properties": {
+            "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+            "revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "sourceUrl": { "type": "string", "format": "uri", "pattern": "^https://huggingface\\.co/" }
+          }
+        },
+        "weightsLicense": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["spdxId", "url"],
+          "properties": {
+            "spdxId": { "const": "Apache-2.0" },
+            "url": { "const": "https://www.apache.org/licenses/LICENSE-2.0" }
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "framework",
+            "modelClass",
+            "processorClass",
+            "artifactFormat",
+            "trustRemoteCode",
+            "localFilesOnly"
+          ],
+          "properties": {
+            "framework": { "const": "transformers" },
+            "modelClass": { "const": "AutoModelForImageClassification" },
+            "processorClass": { "const": "AutoImageProcessor" },
+            "artifactFormat": { "const": "safetensors" },
+            "trustRemoteCode": { "const": false },
+            "localFilesOnly": { "const": true }
+          }
+        },
+        "upstreamLabels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["0", "1"],
+          "properties": {
+            "0": { "type": "string", "pattern": "^[Rr]eal$" },
+            "1": { "type": "string", "pattern": "^(AI|ai)$" }
+          }
+        },
+        "normalizedLabels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["0", "1"],
+          "properties": {
+            "0": { "const": "human" },
+            "1": { "const": "synthetic" }
+          }
+        }
+      }
+    }
+  }
+}
