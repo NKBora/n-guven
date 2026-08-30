@@ -89,6 +89,10 @@ from nguven_evaluation.image_benchmark import (
     image_benchmark_evidence_allowed,
     load_image_benchmark_lock,
 )
+from nguven_evaluation.image_transformers_backend import (
+    materialize_image_candidate,
+    verify_image_candidate_artifacts,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -313,6 +317,38 @@ def build_parser() -> argparse.ArgumentParser:
     )
     image_benchmark_parser.add_argument(
         "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
+    )
+
+    image_materialize_parser = subparsers.add_parser(
+        "materialize-image-model",
+        help="download and verify one pinned image model safetensors bundle",
+    )
+    image_materialize_parser.add_argument(
+        "--adapter-id", choices=("siglip2-aiornot", "vit-cifake"), required=True
+    )
+    image_materialize_parser.add_argument("--output", type=Path, required=True)
+    image_materialize_parser.add_argument("--cache-dir", type=Path)
+    image_materialize_parser.add_argument("--allow-network", action="store_true")
+    image_materialize_parser.add_argument(
+        "--registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
+    )
+    image_materialize_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_CANDIDATES_SCHEMA_PATH
+    )
+
+    image_verify_parser = subparsers.add_parser(
+        "verify-image-model",
+        help="verify one local image model bundle against the reviewed registry",
+    )
+    image_verify_parser.add_argument(
+        "--adapter-id", choices=("siglip2-aiornot", "vit-cifake"), required=True
+    )
+    image_verify_parser.add_argument("--artifact-root", type=Path, required=True)
+    image_verify_parser.add_argument(
+        "--registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
+    )
+    image_verify_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_CANDIDATES_SCHEMA_PATH
     )
 
     integrity_parser = subparsers.add_parser(
@@ -806,6 +842,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                 schema_path=args.schema,
                 candidate_registry_path=args.candidate_registry,
             )
+        elif args.command in {"materialize-image-model", "verify-image-model"}:
+            image_candidates = load_image_candidate_registry(
+                args.registry,
+                schema_path=args.schema,
+            )
+            image_candidate = next(
+                candidate
+                for candidate in image_candidates
+                if candidate.adapter_id == args.adapter_id
+            )
+            if args.command == "materialize-image-model":
+                materialize_image_candidate(
+                    image_candidate,
+                    args.output,
+                    allow_network=args.allow_network,
+                    cache_dir=args.cache_dir,
+                )
+            else:
+                verify_image_candidate_artifacts(image_candidate, args.artifact_root)
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -998,6 +1053,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"Validated {image_benchmark_lock['benchmarkId']}:"
             f"{image_benchmark_lock['version']} with result evidence {evidence}"
         )
+    elif args.command == "materialize-image-model":
+        print(f"Materialized verified {image_candidate.adapter_id} artifacts at {args.output}")
+    elif args.command == "verify-image-model":
+        print(f"Verified local {image_candidate.adapter_id} artifacts at {args.artifact_root}")
     elif args.command == "verify-content-hashes":
         print(
             f"Verified {integrity_report.verified_record_count} content hash(es) "

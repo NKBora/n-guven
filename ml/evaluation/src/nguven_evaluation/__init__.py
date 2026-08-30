@@ -71,6 +71,11 @@ from nguven_evaluation.image_benchmark import (
     image_benchmark_evidence_allowed,
     load_image_benchmark_lock,
 )
+from nguven_evaluation.image_transformers_backend import (
+    LocalTransformersImageBackend,
+    materialize_image_candidate,
+    verify_image_candidate_artifacts,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -156,6 +161,7 @@ __all__ = [
     "ImageBenchmarkContractError",
     "ImageModelAdapterError",
     "ImagePrediction",
+    "LocalTransformersImageBackend",
     "ImagePreprocessingError",
     "ImageVariant",
     "InferenceDataError",
@@ -208,6 +214,7 @@ __all__ = [
     "load_image_dataset_inputs",
     "load_image_candidate_registry",
     "load_image_benchmark_lock",
+    "materialize_image_candidate",
     "load_predictions",
     "image_benchmark_evidence_allowed",
     "load_training_splits",
@@ -219,6 +226,7 @@ __all__ = [
     "package_finetuned_model",
     "verify_dataset_content_hashes",
     "verify_model_artifacts",
+    "verify_image_candidate_artifacts",
     "validate_experiment_inputs",
     "validate_comparable_experiments",
     "temperature_scale",

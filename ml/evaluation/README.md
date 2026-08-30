@@ -94,6 +94,12 @@ The committed lock is intentionally `source-locked` with result evidence disable
 Downloading and hashing the roughly 1.46 GB pinned source, materializing the private
 images, and completing both model runs are required before that gate may be reviewed.
 
+Model weights are materialized only through the reviewed three-file allowlist. Network
+access is opt-in for the initial pinned download; every later verification and inference
+step is local-only. The destination is published atomically only after all declared
+sizes and SHA-256 hashes match. Unexpected files, symlinks, pickle weights, architecture
+drift, and label-map drift fail closed.
+
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than
