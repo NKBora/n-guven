@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.core.config import settings
 
@@ -17,7 +17,6 @@ AnalysisId = Annotated[
 AnalysisText = Annotated[
     str,
     StringConstraints(
-        strip_whitespace=True,
         min_length=1,
         max_length=settings.max_text_length,
     ),
@@ -42,6 +41,15 @@ class ApiContract(BaseModel):
 class TextAnalysisRequest(ApiContract):
     analysis_id: AnalysisId = Field(alias="analysisId")
     text: AnalysisText
+
+    @field_validator("text")
+    @classmethod
+    def validate_model_text(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("text must contain a non-whitespace character")
+        if "\x00" in value:
+            raise ValueError("text must not contain NUL characters")
+        return value
 
 
 class TextAnalysisResponse(ApiContract):

@@ -9,10 +9,10 @@ app = FastAPI(
     title="N-Güven Text AI Service",
     summary="Turkish text AI-generation signal service foundation",
     description=(
-        "Stable HTTP contracts for Turkish text synthetic-signal analysis. "
-        "No ML model is loaded in the current service foundation."
+        "Calibrated BERTurk prototype signal for Turkish synthetic-text analysis. "
+        "The service returns an advisory signal, not proof of authorship."
     ),
-    version="0.1.0",
+    version="0.2.0",
 )
 app.include_router(router)
 

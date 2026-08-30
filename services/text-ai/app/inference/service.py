@@ -1,5 +1,12 @@
+from functools import lru_cache
 from typing import Protocol
 
+from app.core.config import settings
+from app.inference.berturk import (
+    BerturkTextInferenceService,
+    LocalBerturkPredictor,
+    load_verified_berturk_release,
+)
 from app.schemas.analysis import (
     ConfidenceLevel,
     TextAnalysisRequest,
@@ -28,8 +35,9 @@ class NotConfiguredTextInferenceService:
         )
 
 
-_text_inference_service: TextInferenceService = NotConfiguredTextInferenceService()
-
-
+@lru_cache(maxsize=1)
 def get_text_inference_service() -> TextInferenceService:
-    return _text_inference_service
+    if settings.model_root is None:
+        return NotConfiguredTextInferenceService()
+    release = load_verified_berturk_release(settings.model_root)
+    return BerturkTextInferenceService(release, LocalBerturkPredictor(release))

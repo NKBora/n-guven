@@ -120,14 +120,14 @@ jobs:
           git check-ignore --quiet --no-index ml/evaluation/calibration/runs/private-run.json
 
   container:
-    name: Text AI container
+    name: Packaged BERTurk runtime
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Build non-root service image
+      - name: Build CPU-only BERTurk service image
         run: docker build --tag nguven-text-ai:test services/text-ai
 
       - name: Verify configured runtime user
@@ -136,3 +136,29 @@ jobs:
           test -n "$runtime_user"
           test "$runtime_user" != "0"
           test "$runtime_user" != "root"
+
+      - name: Verify offline inference runtime and release registry
+        run: |
+          docker run --rm --entrypoint python nguven-text-ai:test -c '
+          import importlib.metadata
+          import os
+          from app.inference.berturk import DEFAULT_RELEASE_PATH
+
+          assert importlib.metadata.version("torch")
+          assert importlib.metadata.version("transformers")
+          assert importlib.metadata.version("safetensors")
+          assert os.environ["HF_HUB_OFFLINE"] == "1"
+          assert os.environ["TRANSFORMERS_OFFLINE"] == "1"
+          assert DEFAULT_RELEASE_PATH.is_file()
+          '
+
+      - name: Verify safe startup without mounted weights
+        run: |
+          docker run --rm --entrypoint python nguven-text-ai:test -c '
+          import asyncio
+          from app.inference.service import NotConfiguredTextInferenceService, get_text_inference_service
+          from app.main import health
+
+          assert isinstance(get_text_inference_service(), NotConfiguredTextInferenceService)
+          assert asyncio.run(health()).status == "ok"
+          '

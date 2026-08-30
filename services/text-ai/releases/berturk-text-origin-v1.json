@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0",
+  "releaseId": "berturk-text-origin-v1",
+  "stage": "prototype",
+  "model": {
+    "adapterId": "berturk",
+    "modelId": "berturk-text-origin-v1-seed-17",
+    "seed": 17,
+    "manifestSha256": "a90bbce0dbf103147e67d5b002fff254be8620ed1c6e7202bf583fc84a46bbfc",
+    "weightsSha256": "2513e14fc9cf251c83623aeeeb452e8dc550a3aaab520ab8c3de14e835368686",
+    "weightsSizeBytes": 442499064,
+    "artifactFormat": "safetensors"
+  },
+  "calibration": {
+    "method": "temperature-scaling",
+    "fittedSplit": "validation",
+    "temperature": 0.05000000000000001,
+    "artifactSha256": "f6003a11f0f0d66edb72594d49a7a4e97aea4f0bb099b6bf904fd44c5784c3ce",
+    "validationManifestSha256": "b8c01213f5914ab1dc0dcab9a50ac52724d9ceef0f0905b09d51bd4836b1c5e7",
+    "validationPredictionsSha256": "9f6e8c043508ca2a42ddf9024c9a13885a4d318173093a66dcaede6b951f3309"
+  },
+  "thresholds": {
+    "version": "text-origin-thresholds-v1",
+    "lowMaximum": 0.2,
+    "highMinimum": 0.8
+  },
+  "selection": {
+    "policy": "validation-macro-f1-desc-seed-asc-v1",
+    "validationMacroF1": 1.0,
+    "trainingEvidenceSha256": "48fdd985d07b0579b8fbb2119e2d7a895b757ddfa7068afea57ff845e1213d5f",
+    "decisionArtifactSha256": "f018d0bab6f01b395de9bdb9856cff1d1932183edaf0b6b1703fd8eb8855511f",
+    "testSplitUsed": false
+  },
+  "artifactLayout": {
+    "modelManifest": "model-manifest.json",
+    "calibration": "calibration.json"
+  },
+  "limitations": [
+    "Prototype integration only; this release is not approved for production decisions.",
+    "Near-perfect validation results may reflect source or style shortcuts and require external-domain validation.",
+    "The score is an advisory synthetic-text signal and is not proof of authorship or a moderation decision."
+  ]
+}
