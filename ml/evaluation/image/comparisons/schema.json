@@ -1,0 +1,85 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:image-model-comparison-v1",
+  "title": "N-Güven image model comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "createdAt", "benchmark", "protocol", "candidates", "selection"],
+  "properties": {
+    "schemaVersion": {"const": "image-model-comparison-v1"},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "benchmark": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "version", "sha256", "recordCount", "variantCount", "evidenceAllowed"],
+      "properties": {
+        "id": {"const": "image-origin-robustness"}, "version": {"const": "v1"},
+        "sha256": {"$ref": "#/$defs/hash"}, "recordCount": {"type": "integer", "minimum": 1},
+        "variantCount": {"type": "integer", "minimum": 1}, "evidenceAllowed": {"type": "boolean"}
+      }
+    },
+    "protocol": {
+      "type": "object", "additionalProperties": false,
+      "required": ["transformations", "selectionOrder", "acceptanceTargets"],
+      "properties": {
+        "transformations": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string"}},
+        "selectionOrder": {"type": "array", "prefixItems": [{"const": "worstTransformationMacroF1"}, {"const": "macroF1"}, {"const": "highConfidenceFalsePositiveRate"}, {"const": "p95InferenceMs"}], "items": false},
+        "acceptanceTargets": {"type": "object"}
+      }
+    },
+    "candidates": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/candidate"}},
+    "selection": {
+      "type": "object", "additionalProperties": false, "required": ["status", "leaders"],
+      "properties": {
+        "status": {"enum": ["experimental-leader", "selected", "tied", "no-qualified-candidate"]},
+        "leaders": {"type": "array", "maxItems": 2, "uniqueItems": true, "items": {"enum": ["siglip2-aiornot", "vit-cifake"]}}
+      }
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "unitMetric": {"type": "number", "minimum": 0, "maximum": 1},
+    "candidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rank", "adapterId", "modelRevision", "runId", "metrics", "transformations", "acceptance", "artifacts"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1},
+        "adapterId": {"enum": ["siglip2-aiornot", "vit-cifake"]},
+        "modelRevision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "runId": {"type": "string", "minLength": 1, "maxLength": 256},
+        "metrics": {
+          "type": "object", "additionalProperties": false,
+          "required": ["macroF1", "accuracy", "prAuc", "brierScore", "highConfidenceFalsePositiveRate", "p95InferenceMs", "worstTransformationMacroF1"],
+          "properties": {
+            "macroF1": {"$ref": "#/$defs/unitMetric"}, "accuracy": {"$ref": "#/$defs/unitMetric"},
+            "prAuc": {"$ref": "#/$defs/unitMetric"}, "brierScore": {"$ref": "#/$defs/unitMetric"},
+            "highConfidenceFalsePositiveRate": {"$ref": "#/$defs/unitMetric"},
+            "p95InferenceMs": {"type": "number", "minimum": 0},
+            "worstTransformationMacroF1": {"$ref": "#/$defs/unitMetric"}
+          }
+        },
+        "transformations": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/$defs/transformation"}},
+        "acceptance": {
+          "type": "object", "additionalProperties": false, "required": ["status", "checks"],
+          "properties": {
+            "status": {"enum": ["passed", "failed"]},
+            "checks": {
+              "type": "object", "additionalProperties": false,
+              "required": ["macroF1", "worstTransformationMacroF1", "highConfidenceFalsePositiveRate", "p95InferenceMs"],
+              "properties": {"macroF1": {"type": "boolean"}, "worstTransformationMacroF1": {"type": "boolean"}, "highConfidenceFalsePositiveRate": {"type": "boolean"}, "p95InferenceMs": {"type": "boolean"}}
+            }
+          }
+        },
+        "artifacts": {
+          "type": "object", "additionalProperties": false, "required": ["resultSha256", "predictionsSha256"],
+          "properties": {"resultSha256": {"$ref": "#/$defs/hash"}, "predictionsSha256": {"$ref": "#/$defs/hash"}}
+        }
+      }
+    },
+    "transformation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "recordCount", "macroF1", "falsePositiveRate"],
+      "properties": {"name": {"type": "string"}, "recordCount": {"type": "integer", "minimum": 1}, "macroF1": {"$ref": "#/$defs/unitMetric"}, "falsePositiveRate": {"$ref": "#/$defs/unitMetric"}}
+    }
+  }
+}

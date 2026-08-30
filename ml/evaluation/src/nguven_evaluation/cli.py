@@ -103,6 +103,12 @@ from nguven_evaluation.image_benchmark_runner import (
     ImageBenchmarkRunError,
     run_image_benchmark,
 )
+from nguven_evaluation.image_comparison import (
+    DEFAULT_IMAGE_COMPARISON_SCHEMA_PATH,
+    ImageModelComparisonError,
+    compare_image_benchmark_runs,
+    write_image_comparison,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -399,6 +405,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     image_run_parser.add_argument(
         "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
+    )
+
+    image_compare_parser = subparsers.add_parser(
+        "compare-image-models",
+        help="compare complete image benchmark runs under the frozen protocol",
+    )
+    image_compare_parser.add_argument("--run", type=Path, action="append", required=True)
+    image_compare_parser.add_argument("--output", type=Path, required=True)
+    image_compare_parser.add_argument(
+        "--benchmark", type=Path, default=DEFAULT_IMAGE_BENCHMARK_PATH
+    )
+    image_compare_parser.add_argument(
+        "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
+    )
+    image_compare_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_COMPARISON_SCHEMA_PATH
     )
 
     integrity_parser = subparsers.add_parser(
@@ -942,6 +964,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 benchmark_path=args.benchmark,
                 candidate_registry_path=args.candidate_registry,
             )
+        elif args.command == "compare-image-models":
+            image_comparison = compare_image_benchmark_runs(
+                args.run,
+                benchmark_path=args.benchmark,
+                candidate_registry_path=args.candidate_registry,
+                schema_path=args.schema,
+            )
+            write_image_comparison(image_comparison, args.output)
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -1035,6 +1065,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ImageBenchmarkContractError,
         ImageBenchmarkMaterializationError,
         ImageBenchmarkRunError,
+        ImageModelComparisonError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -1149,6 +1180,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Wrote {image_benchmark_run['run']['counts']['predictions']} private "
             f"prediction(s) and evaluation evidence to {args.output}"
+        )
+    elif args.command == "compare-image-models":
+        leaders = ", ".join(image_comparison["selection"]["leaders"]) or "none"
+        print(
+            f"Wrote {image_comparison['selection']['status']} image comparison "
+            f"for {leaders} to {args.output}"
         )
     elif args.command == "verify-content-hashes":
         print(

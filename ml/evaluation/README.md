@@ -138,6 +138,21 @@ nguven-eval run-image-benchmark \
 Until the benchmark materialization is reviewed, generated run metadata is explicitly
 marked `experimental-unreviewed`; the runner does not convert it into a public claim.
 
+Compare both complete run directories only after they use byte-identical labels,
+preprocessed variants, candidate registry, and benchmark lock:
+
+```bash
+nguven-eval compare-image-models \
+  --run image/predictions/siglip2-syncred-v1 \
+  --run image/predictions/vit-syncred-v1 \
+  --output image/comparisons/private/image-origin-robustness-v1.json
+```
+
+The comparison checks all transformation slices and applies the frozen order: worst
+transformation Macro F1, overall Macro F1, high-confidence false-positive rate, then
+P95 latency. A candidate that fails any acceptance target cannot be selected, and a
+source-locked benchmark can report only an `experimental-leader`.
+
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than
