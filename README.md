@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 # N-Güven
 
 N-Güven, NSosyal odaklı bir içerik güveni ve şeffaflık platformu olarak tasarlanmaktadır. Amaç; Türkçe metin ve statik görsellerde AI üretimi veya sentetik içerik olasılığına ilişkin işaretleri analiz etmek, belirsizliği saklamadan kullanıcıya anlaşılır bir karar-destek sinyali sunmaktır.
@@ -222,7 +223,7 @@ Queue/routing adları, manual acknowledgement, retry/backoff, DLQ ve idempotency
 
 ## Yapay Zekâ Mimarisi
 
-**Durum: Türkçe metin servis/sözleşme temeli ve tekrarlanabilir model karşılaştırması uygulandı; production model entegrasyonu henüz yapılmadı.** AI servislerinin backend process'inden ayrılması; Python bağımlılıklarının izole edilmesini, CPU worker'larının API'den bağımsız ölçeklenmesini ve model sürümlerinin ayrı yönetilmesini amaçlar.
+**Durum: Türkçe metin servis/sözleşme temeli ile metin ve görsel model karşılaştırmaları uygulandı; production model entegrasyonu henüz yapılmadı.** AI servislerinin backend process'inden ayrılması; Python bağımlılıklarının izole edilmesini, CPU worker'larının API'den bağımsız ölçeklenmesini ve model sürümlerinin ayrı yönetilmesini amaçlar.
 
 ### Türkçe Metin Analizi
 
@@ -236,9 +237,11 @@ Model card veya üçüncü taraf benchmark değerleri N-Güven sonucu olarak sun
 
 ### Görsel Analizi
 
-AIorNot-SigLIP2 benzeri bir detector ailesi adaydır; nihai seçim ve lisans kontrolü yapılmamıştır. Amaç AI-generated image sinyali üretmektir. Bu görev, genel görsel manipülasyon/adli analiz problemiyle aynı değildir ve doğrulanmadan “her tür düzenlemeyi tespit eder” iddiasında bulunulmaz.
+**Durum: Dondurulmuş karşılaştırma tamamlandı; uygun model bulunmadığı için servis entegrasyonu ertelendi.** Hash-pinned AIorNot SigLIP2 ve CapCheck ViT adayları, dış kaynak SynCred-Bench üzerindeki 450 insan ve 600 sentetik görselin altı dönüşümüyle değerlendirilmiştir. Her aday aynı 6.300 varyantı işlemiştir.
 
-JPEG compression, resize, crop ve screenshot dönüşümlerine karşı robustness değerlendirmesi planlanmaktadır. ONNX Runtime/CPU export ancak doğruluk farkı, P50/P95 latency ve bellek kullanımı ölçülerek kabul edilecektir.
+ViT `0,531738` Macro-F1 ve `0,508897` en zayıf dönüşüm Macro-F1 ile sıralamada birincidir; ancak `0,306667` high-confidence false-positive oranı ve kalite değerleri kabul hedeflerini geçmemiştir. SigLIP2'nin Macro-F1 değeri `0,340523`, en zayıf dönüşüm değeri `0,317235` olmuştur. Her iki aday da kalite kapısından kaldığı için hiçbir model prototip için seçilmemiştir. Canonical sonuç [görsel karşılaştırmada](ml/evaluation/image/comparisons/image-origin-robustness-v1.json), karar ise [ADR-0002](docs/adr/0002-defer-image-detector-selection.md) içinde kayıtlıdır.
+
+Bu görev genel görsel manipülasyon/adli analiz problemiyle aynı değildir. Ayrı validation verisi ve değişmeyen kabul kapısıyla daha güçlü/lisansı doğrulanmış adaylar değerlendirilmeden image AI servisi gerçek skor üretmeyecektir. ONNX Runtime/CPU export da ancak kabul edilen bir adayın doğruluk farkı, P50/P95 latency ve bellek kullanımı ölçülerek ele alınacaktır.
 
 ### Kamu Figürü Bağlam Servisi
 
@@ -252,22 +255,23 @@ Kategori analitiği hedef kapsamda olsa da sınıflandırıcı, taxonomy veya ö
 
 ## Model Doğrulama ve Değerlendirme
 
-`ml/evaluation/`; dataset manifesti ile offline tahmin artefaktlarını JSON Schema ile doğrular, duplicate kayıtları ve split'ler arası kaynak/üretici ailesi sızıntısını reddeder, sabit seed ile tekrarlanabilir split üretir ve izlenebilir sonuç artefaktı oluşturur. Girdilerin SHA-256 değerleri; model/dataset sürümü, Git commit'i ve seed ile birlikte kaydedilir.
+`ml/evaluation/`; dataset manifesti ile offline tahmin artefaktlarını JSON Schema ile doğrular, duplicate kayıtları ve split'ler arası kaynak/üretici ailesi sızıntısını reddeder, sabit seed ile tekrarlanabilir split üretir ve izlenebilir sonuç artefaktı oluşturur. Girdilerin SHA-256 değerleri; model/dataset sürümü, Git commit'i ve seed ile birlikte kaydedilir. Metin ve görsel karşılaştırmalarının public çıktıları ham içerik yerine metrik ve artifact hashleri taşır.
 
-Bu altyapı model çalıştırmaz ve depoda gerçek dataset ya da benchmark sonucu bulunmaz. Dolayısıyla henüz ölçülen N-Güven metriği yoktur. Aşağıdaki metrikler ve eşikler **değerlendirme taslağıdır**, elde edilmiş sonuç değildir.
-
-| Boyut | Planlanan ölçüm |
+| Boyut | Uygulanan ölçüm |
 | --- | --- |
-| Sınıflandırma | Macro-F1, AUROC, Precision, Recall, False Positive Rate |
-| Kalibrasyon | ECE, Brier Score, reliability analizi |
-| Performans | P50/P95 latency, throughput, peak memory |
+| Sınıflandırma | Accuracy, Macro-F1, precision/recall, PR-AUC ve false-positive oranı |
+| Kalibrasyon | ECE, Brier Score ve validation-only temperature scaling (metin) |
+| Performans | Mean ve P95 inference latency |
 | Robustness | Kaynak, generator family ve dönüşüm bazlı kırılım |
 
-Training/validation/test ayrımı için duplicate, source-level ve generator-family sızıntı kontrolleri uygulanmıştır. Kapalı test seti, cross-generator evaluation, dönüşüm testleri ve gerçek veri protokolü henüz planlanan kapsamdadır.
+Training/validation/test ayrımı için duplicate, source-level ve generator-family sızıntı kontrolleri uygulanmıştır. Görsel test protokolü canonical, JPEG-90, JPEG-70, resize, center-crop ve screenshot dilimlerini içerir. Bu sonuçlar production genellemesi değildir.
 
 | Hedef | Eşik | Durum |
 | --- | ---: | --- |
-| Metin Macro-F1 | ≥ 0.80 | Hedef; ölçülmedi |
+| Metin Macro-F1 | ≥ 0.80 | BERTurk: 0,999722; geçti |
+| Görsel Macro-F1 | ≥ 0.80 | ViT: 0,531738; SigLIP2: 0,340523; ikisi de kaldı |
+| Görsel en zayıf dönüşüm Macro-F1 | ≥ 0.70 | ViT: 0,508897; SigLIP2: 0,317235; ikisi de kaldı |
+| Görsel high-confidence FPR | ≤ 0.05 | ViT: 0,306667 kaldı; SigLIP2: 0,040000 geçti |
 | Görsel Macro-F1 | ≥ 0.85 | Hedef; ölçülmedi |
 | Yüksek güven bandı FPR | ≤ %5 | Hedef; ölçülmedi |
 | Gösterilen kamu figürü eşleşme precision | ≥ %95 | Hedef; ölçülmedi |
@@ -693,7 +697,7 @@ Model ağırlıkları repository'de yoktur. Her model için source, weight licen
 2. Next.js + TypeScript feed, analiz detayı ve erişilebilirlik bileşenleri.
 3. Local PostgreSQL + RabbitMQ Docker Compose ve typed message contracts.
 4. Türkçe text AI baseline, source-separated evaluation ve calibration.
-5. Görsel detector baseline ve JPEG/resize/crop/screenshot robustness testleri.
+5. Ayrı validation verisiyle yeni görsel detector adayları; mevcut iki aday kabul edilmedi.
 6. Kontrollü kamu figürü galerisinin privacy/license incelemesi ve high-confidence fallback.
 7. Kubernetes Deployment/Service/probe/resource manifestleri ve ECR build pipeline.
 8. S3 model artifact, EBS/PVC veya yönetilen database kararı, CloudWatch telemetry.
