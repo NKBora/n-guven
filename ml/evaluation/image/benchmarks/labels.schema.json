@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://n-guven.example/schemas/image-benchmark-label-v1.json",
+  "title": "N-Güven private image benchmark label",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "label", "sourceGroup", "generatorFamily", "contentCategory", "circulationStyle"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "label": { "enum": ["human", "synthetic"] },
+    "sourceGroup": { "enum": ["fp_450", "syncred_600"] },
+    "generatorFamily": { "type": ["string", "null"], "maxLength": 128 },
+    "contentCategory": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "circulationStyle": { "type": "string", "minLength": 1, "maxLength": 128 }
+  }
+}

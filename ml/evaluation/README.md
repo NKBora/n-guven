@@ -100,6 +100,19 @@ step is local-only. The destination is published atomically only after all decla
 sizes and SHA-256 hashes match. Unexpected files, symlinks, pickle weights, architecture
 drift, and label-map drift fail closed.
 
+Materialize the frozen source only into ignored private storage. The command downloads
+the four revision-pinned Parquet shards when explicitly allowed, verifies their exact
+source identity, accepts embedded image bytes only, and atomically emits `images/`,
+`inputs.jsonl`, `labels.jsonl`, and a non-image summary:
+
+```bash
+python -m pip install -e ".[materialization]"
+nguven-eval materialize-image-benchmark \
+  --source-cache image/benchmarks/cache/syncred-v1 \
+  --output image/benchmarks/private/syncred-v1 \
+  --allow-network
+```
+
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than

@@ -76,6 +76,11 @@ from nguven_evaluation.image_transformers_backend import (
     materialize_image_candidate,
     verify_image_candidate_artifacts,
 )
+from nguven_evaluation.image_benchmark_materialization import (
+    ImageBenchmarkMaterializationError,
+    fetch_locked_image_sources,
+    materialize_image_benchmark,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -159,6 +164,7 @@ __all__ = [
     "ImageDatasetInputError",
     "ImageCandidateDescriptor",
     "ImageBenchmarkContractError",
+    "ImageBenchmarkMaterializationError",
     "ImageModelAdapterError",
     "ImagePrediction",
     "LocalTransformersImageBackend",
@@ -215,8 +221,10 @@ __all__ = [
     "load_image_candidate_registry",
     "load_image_benchmark_lock",
     "materialize_image_candidate",
+    "materialize_image_benchmark",
     "load_predictions",
     "image_benchmark_evidence_allowed",
+    "fetch_locked_image_sources",
     "load_training_splits",
     "load_preprocessed_records",
     "preprocess_turkish_text",

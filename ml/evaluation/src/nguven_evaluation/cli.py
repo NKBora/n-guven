@@ -93,6 +93,11 @@ from nguven_evaluation.image_transformers_backend import (
     materialize_image_candidate,
     verify_image_candidate_artifacts,
 )
+from nguven_evaluation.image_benchmark_materialization import (
+    ImageBenchmarkMaterializationError,
+    fetch_locked_image_sources,
+    materialize_image_benchmark,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -349,6 +354,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     image_verify_parser.add_argument(
         "--schema", type=Path, default=DEFAULT_IMAGE_CANDIDATES_SCHEMA_PATH
+    )
+
+    image_materialize_benchmark_parser = subparsers.add_parser(
+        "materialize-image-benchmark",
+        help="download, verify, and privately materialize the frozen image benchmark",
+    )
+    image_materialize_benchmark_parser.add_argument(
+        "benchmark", type=Path, default=DEFAULT_IMAGE_BENCHMARK_PATH, nargs="?"
+    )
+    image_materialize_benchmark_parser.add_argument("--source-cache", type=Path, required=True)
+    image_materialize_benchmark_parser.add_argument("--output", type=Path, required=True)
+    image_materialize_benchmark_parser.add_argument("--allow-network", action="store_true")
+    image_materialize_benchmark_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_BENCHMARK_SCHEMA_PATH
+    )
+    image_materialize_benchmark_parser.add_argument(
+        "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
     )
 
     integrity_parser = subparsers.add_parser(
@@ -861,6 +883,22 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             else:
                 verify_image_candidate_artifacts(image_candidate, args.artifact_root)
+        elif args.command == "materialize-image-benchmark":
+            image_benchmark_lock = load_image_benchmark_lock(
+                args.benchmark,
+                schema_path=args.schema,
+                candidate_registry_path=args.candidate_registry,
+            )
+            image_source_paths = fetch_locked_image_sources(
+                image_benchmark_lock,
+                args.source_cache,
+                allow_network=args.allow_network,
+            )
+            image_materialization_summary = materialize_image_benchmark(
+                image_benchmark_lock,
+                image_source_paths,
+                args.output,
+            )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -952,6 +990,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ImagePreprocessingError,
         ImageModelAdapterError,
         ImageBenchmarkContractError,
+        ImageBenchmarkMaterializationError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -1057,6 +1096,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Materialized verified {image_candidate.adapter_id} artifacts at {args.output}")
     elif args.command == "verify-image-model":
         print(f"Verified local {image_candidate.adapter_id} artifacts at {args.artifact_root}")
+    elif args.command == "materialize-image-benchmark":
+        print(
+            f"Materialized {image_materialization_summary['recordCount']} private image "
+            f"benchmark record(s) at {args.output}"
+        )
     elif args.command == "verify-content-hashes":
         print(
             f"Verified {integrity_report.verified_record_count} content hash(es) "

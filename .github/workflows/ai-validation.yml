@@ -83,6 +83,7 @@ jobs:
             tests/test_image_preprocessing.py \
             tests/test_image_model_adapters.py \
             tests/test_image_benchmark.py \
+            tests/test_image_benchmark_materialization.py \
             tests/test_image_transformers_backend.py
 
       - name: Test fine-tuning and comparison readiness contracts
@@ -111,6 +112,7 @@ jobs:
           nguven-eval validate-image-benchmark --help >/dev/null
           nguven-eval materialize-image-model --help >/dev/null
           nguven-eval verify-image-model --help >/dev/null
+          nguven-eval materialize-image-benchmark --help >/dev/null
           nguven-eval verify-content-hashes --help >/dev/null
           nguven-eval preprocess-text --help >/dev/null
           nguven-eval predict-text --help >/dev/null
