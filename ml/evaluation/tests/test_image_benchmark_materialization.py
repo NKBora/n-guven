@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 from __future__ import annotations
 
 import hashlib
@@ -21,6 +22,17 @@ from nguven_evaluation.image_dataset_inputs import load_image_dataset_inputs
 def _png(color: str) -> bytes:
     output = io.BytesIO()
     Image.new("RGB", (64, 64), color).save(output, format="PNG")
+    return output.getvalue()
+
+
+def _mpo() -> bytes:
+    output = io.BytesIO()
+    Image.new("RGB", (64, 64), "white").save(
+        output,
+        format="MPO",
+        save_all=True,
+        append_images=[Image.new("RGB", (64, 64), "black")],
+    )
     return output.getvalue()
 
 
@@ -123,3 +135,25 @@ def test_materialization_rejects_external_image_paths(tmp_path: Path) -> None:
 
     with pytest.raises(ImageBenchmarkMaterializationError, match="embedded bytes"):
         materialize_image_benchmark(lock, paths, tmp_path / "private", row_reader=rows)
+
+
+def test_materializes_reviewed_two_view_mpo_without_changing_source_bytes(
+    tmp_path: Path,
+) -> None:
+    cache = tmp_path / "cache"
+    lock, paths = _small_lock(cache)
+    mpo = _mpo()
+
+    def rows(path: Path):
+        yield {
+            "subset": path.parent.name,
+            "image": {"bytes": mpo if path.parent.name == "fp_450" else _png("black")},
+            "prefix": "NEWS",
+            "style": "Captured",
+        }
+
+    output = tmp_path / "private"
+    materialize_image_benchmark(lock, paths, output, row_reader=rows)
+
+    stored = output / "images" / "fp_450-0000" / "original.mpo"
+    assert stored.read_bytes() == mpo

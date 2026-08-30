@@ -52,6 +52,12 @@ def _benchmark() -> dict:
     benchmark["protocol"]["recordCount"] = 2
     benchmark["source"]["subsets"][0]["recordCount"] = 1
     benchmark["source"]["subsets"][1]["recordCount"] = 1
+    benchmark["release"] = {
+        "status": "source-locked",
+        "evidenceStatus": "not-materialized",
+        "resultsAllowed": False,
+        "materializedArtifact": None,
+    }
     return benchmark
 
 

@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 """Verified materialization and local-only Transformers image inference."""
 
 from __future__ import annotations
@@ -129,6 +130,7 @@ class LocalTransformersImageBackend:
                 str(artifact_root),
                 local_files_only=True,
                 trust_remote_code=False,
+                use_fast=False,
             )
             self._model = AutoModelForImageClassification.from_pretrained(
                 str(artifact_root),

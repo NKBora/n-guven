@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 from __future__ import annotations
 
 import json
@@ -29,7 +30,9 @@ def test_repository_lock_is_external_frozen_and_evidence_gated() -> None:
     assert lock["protocol"]["recordCount"] == 1050
     assert "competitions/aiornot" in lock["source"]["excludedTrainingRepositories"]
     assert "CIFAKE" in lock["source"]["excludedTrainingRepositories"]
-    assert image_benchmark_evidence_allowed(lock) is False
+    assert image_benchmark_evidence_allowed(lock) is True
+    assert lock["release"]["materializedArtifact"]["recordCount"] == 1050
+    assert lock["release"]["materializedArtifact"]["variantCount"] == 6300
 
 
 def test_lock_rejects_candidate_registry_drift(tmp_path: Path) -> None:
@@ -50,7 +53,10 @@ def test_lock_rejects_missing_robustness_transformation(tmp_path: Path) -> None:
 
 def test_lock_rejects_unreviewed_result_enablement(tmp_path: Path) -> None:
     lock = deepcopy(load_image_benchmark_lock())
+    lock["release"]["status"] = "source-locked"
+    lock["release"]["evidenceStatus"] = "not-materialized"
     lock["release"]["resultsAllowed"] = True
+    lock["release"]["materializedArtifact"] = None
 
     with pytest.raises(ImageBenchmarkContractError, match="before reviewed materialization"):
         load_image_benchmark_lock(_write_lock(tmp_path, lock))

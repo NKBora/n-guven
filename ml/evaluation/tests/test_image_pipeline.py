@@ -65,6 +65,12 @@ def _small_source_lock(tmp_path: Path) -> tuple[dict, list[Path]]:
     benchmark["source"]["subsets"][0]["recordCount"] = 1
     benchmark["source"]["subsets"][1]["recordCount"] = 1
     benchmark["protocol"]["recordCount"] = 2
+    benchmark["release"] = {
+        "status": "source-locked",
+        "evidenceStatus": "not-materialized",
+        "resultsAllowed": False,
+        "materializedArtifact": None,
+    }
     return benchmark, sources
 
 

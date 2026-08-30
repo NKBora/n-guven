@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 """Hash-verified private materialization of the frozen SynCred image benchmark."""
 
 from __future__ import annotations
@@ -25,7 +26,12 @@ EVALUATION_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_IMAGE_LABEL_SCHEMA_PATH = (
     EVALUATION_ROOT / "image" / "benchmarks" / "labels.schema.json"
 )
-SUPPORTED_FORMAT_SUFFIXES = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}
+SUPPORTED_FORMAT_SUFFIXES = {
+    "JPEG": ".jpg",
+    "MPO": ".mpo",
+    "PNG": ".png",
+    "WEBP": ".webp",
+}
 
 
 class ImageBenchmarkMaterializationError(ValueError):
@@ -206,7 +212,11 @@ def _validate_image_bytes(data: bytes) -> str:
                 image_format = str(image.format or "").upper()
                 if image_format not in SUPPORTED_FORMAT_SUFFIXES:
                     raise ImageBenchmarkMaterializationError("Unsupported embedded image format")
-                if bool(getattr(image, "is_animated", False)):
+                if image_format == "MPO" and int(getattr(image, "n_frames", 1)) != 2:
+                    raise ImageBenchmarkMaterializationError(
+                        "MPO benchmark image must contain exactly two views"
+                    )
+                if image_format != "MPO" and bool(getattr(image, "is_animated", False)):
                     raise ImageBenchmarkMaterializationError("Animated benchmark images are unsupported")
                 image.verify()
                 return SUPPORTED_FORMAT_SUFFIXES[image_format]

@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 """Versioned, deterministic preprocessing and robustness variants for images."""
 
 from __future__ import annotations
@@ -24,10 +25,11 @@ DEFAULT_IMAGE_PREPROCESSED_SCHEMA_PATH = (
     EVALUATION_ROOT / "image" / "preprocessed" / "schema.json"
 )
 DEFAULT_IMAGE_PREPROCESSING_VERSION = "image-preprocessing-v1"
-SUPPORTED_SOURCE_FORMATS = frozenset({"JPEG", "PNG", "WEBP"})
+SUPPORTED_SOURCE_FORMATS = frozenset({"JPEG", "MPO", "PNG", "WEBP"})
 MIN_IMAGE_DIMENSION = 32
 MAX_IMAGE_DIMENSION = 16_384
 MAX_IMAGE_PIXELS = 40_000_000
+PNG_COMPRESSION_LEVEL = 1
 ROBUSTNESS_TRANSFORMATIONS = (
     "canonical",
     "jpeg-q90",
@@ -172,10 +174,15 @@ def _load_normalized_rgb(path: Path) -> Image.Image:
                     raise ImagePreprocessingError(
                         f"Unsupported image format: {source_format or 'unknown'}"
                     )
-                if bool(getattr(source, "is_animated", False)):
+                if source_format == "MPO" and int(getattr(source, "n_frames", 1)) != 2:
+                    raise ImagePreprocessingError(
+                        "MPO input must contain exactly two views"
+                    )
+                if source_format != "MPO" and bool(getattr(source, "is_animated", False)):
                     raise ImagePreprocessingError("Animated images are not supported")
                 width, height = source.size
                 _validate_dimensions(width, height)
+                source.seek(0)
                 source.load()
                 transposed = ImageOps.exif_transpose(source)
                 _validate_dimensions(*transposed.size)
@@ -245,7 +252,12 @@ def _variant(
             exif=b"",
         )
     else:
-        image.save(buffer, format="PNG", optimize=False, compress_level=9)
+        image.save(
+            buffer,
+            format="PNG",
+            optimize=False,
+            compress_level=PNG_COMPRESSION_LEVEL,
+        )
     return ImageVariant(
         transformation=transformation,
         data=buffer.getvalue(),

@@ -59,6 +59,10 @@ The `image-preprocessing-v1` command strips metadata, applies EXIF orientation, 
 to deterministic RGB, and writes canonical plus JPEG, resize, crop, and screenshot
 robustness variants into a new private directory:
 
+PNG variants use deterministic lossless level-1 compression. Compression changes only
+storage bytes and runtime, not decoded pixels; the exact output hashes remain bound by
+the private preprocessing manifest.
+
 ```bash
 nguven-eval preprocess-image path/to/private-images.jsonl \
   --image-root path/to/private-images \
@@ -91,9 +95,10 @@ the worst transformation Macro F1 before overall Macro F1, false positives, and 
 nguven-eval validate-image-benchmark
 ```
 
-The committed lock is intentionally `source-locked` with result evidence disabled.
-Downloading and hashing the roughly 1.46 GB pinned source, materializing the private
-images, and completing both model runs are required before that gate may be reviewed.
+The committed lock is `materialized` and `reviewed`: the roughly 1.46 GB pinned source,
+1,050 private images, and 6,300 deterministic variants are bound by exact SHA-256 values.
+Raw images remain private. The public comparison and evidence summary contain only
+metrics, counts, environment metadata, and artifact hashes.
 
 Model weights are materialized only through the reviewed three-file allowlist. Network
 access is opt-in for the initial pinned download; every later verification and inference
@@ -118,6 +123,12 @@ Offline prediction preparation re-verifies every preprocessed variant, requires 
 transformations for every source image, joins private labels with exact coverage, and
 produces stable variant IDs plus transformation-aware evaluation records. Inference
 errors expose only the variant ID, never image bytes or filenames.
+
+The completed frozen run did not qualify either candidate. ViT ranked first by the
+predeclared robustness-first ordering (Macro F1 `0.5317`, worst transformation `0.5089`)
+but failed the quality and high-confidence false-positive targets. SigLIP2 produced
+Macro F1 `0.3405` and worst-transformation Macro F1 `0.3172`. Therefore rank one is not
+a model selection; the comparison status is `no-qualified-candidate`.
 
 Run each reviewed detector with verified local weights and no network access. The runner
 performs identical warm-up, requires the full frozen protocol, records per-image latency,

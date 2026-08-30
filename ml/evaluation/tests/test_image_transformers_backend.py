@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 from __future__ import annotations
 
 import hashlib
@@ -160,6 +161,7 @@ def test_backend_loads_only_local_safetensors_without_remote_code(
         "path": str(root),
         "local_files_only": True,
         "trust_remote_code": False,
+        "use_fast": False,
     }
     assert calls["model"] == {
         "path": str(root),

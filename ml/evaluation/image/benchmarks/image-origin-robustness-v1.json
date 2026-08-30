@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 {
   "schemaVersion": "image-benchmark-lock-v1",
   "benchmarkId": "image-origin-robustness",
@@ -82,9 +83,15 @@
     }
   },
   "release": {
-    "status": "source-locked",
-    "evidenceStatus": "not-materialized",
-    "resultsAllowed": false,
-    "materializedArtifact": null
+    "status": "materialized",
+    "evidenceStatus": "reviewed",
+    "resultsAllowed": true,
+    "materializedArtifact": {
+      "manifestSha256": "046288fb4914619bba851662c738bf24e3a50ea903dbb74d0c7c533511f91cc7",
+      "preprocessedManifestSha256": "b30d9ccd825cfb2d3e26393d5887468fd9da280d22238a7a400958fdb6a7c4b2",
+      "recordCount": 1050,
+      "variantCount": 6300,
+      "materializedAt": "2026-08-30T18:59:42Z"
+    }
   }
 }

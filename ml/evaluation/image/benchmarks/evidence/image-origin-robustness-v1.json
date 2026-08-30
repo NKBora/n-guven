@@ -1,0 +1,105 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
+{
+  "schemaVersion": "image-benchmark-evidence-v1",
+  "createdAt": "2026-08-30T19:15:23.417757Z",
+  "benchmarkLock": {
+    "path": "image/benchmarks/image-origin-robustness-v1.json",
+    "sha256": "c650748b443e3a70c7cda7aeb9107a9e67c8b917e058e871bfa06cdd2939b4f6"
+  },
+  "candidateRegistry": {
+    "path": "image/models/candidates.json",
+    "sha256": "d4429da752f4327469a3086c5dbed0702f151fe660f818d853b7b5f6c9549bdc"
+  },
+  "source": {
+    "repository": "thu-coai/Syncred-Bench",
+    "revision": "2747c4b2c901b24865c16c4f8c73a220675f9820",
+    "artifactCount": 4,
+    "totalBytes": 1461088940,
+    "formatCounts": {
+      "JPEG": 152,
+      "MPO": 55,
+      "PNG": 768,
+      "WEBP": 75
+    }
+  },
+  "materialization": {
+    "recordCount": 1050,
+    "variantCount": 6300,
+    "labelCounts": {
+      "human": 450,
+      "synthetic": 600
+    },
+    "inputsSha256": "046288fb4914619bba851662c738bf24e3a50ea903dbb74d0c7c533511f91cc7",
+    "labelsSha256": "4f1164aa15ee8da1b7aa029d59b6fc604ec2a7b4c1ee9e6e415d0a5d5214dd64",
+    "preprocessedManifestSha256": "b30d9ccd825cfb2d3e26393d5887468fd9da280d22238a7a400958fdb6a7c4b2",
+    "mpoPolicy": "Preserve exact source bytes and deterministically evaluate the primary view of reviewed two-view MPO files."
+  },
+  "environment": {
+    "device": "mps",
+    "hardware": "Apple M2 Pro",
+    "hardwareModel": "Mac14,9",
+    "cpuCores": 10,
+    "memoryBytes": 17179869184,
+    "machine": "arm64",
+    "operatingSystem": "macOS-15.6.1-arm64-arm-64bit",
+    "python": "3.12.13",
+    "torch": "2.13.0",
+    "transformers": "4.57.6",
+    "pillow": "12.3.0",
+    "pyarrow": "21.0.0",
+    "processorMode": "slow-explicit"
+  },
+  "implementation": {
+    "runnerGitCommit": "5992960",
+    "files": [
+      {
+        "path": "src/nguven_evaluation/image_benchmark_runner.py",
+        "sha256": "4f80f6ffa53e8e3057c7099008d8a72f27f310002456224f27b3ad4da8079905"
+      },
+      {
+        "path": "src/nguven_evaluation/image_comparison.py",
+        "sha256": "c183c369f9e04ea544021f48ff155ab058e209b90a3e358e44cb17ddf2b17c14"
+      },
+      {
+        "path": "src/nguven_evaluation/image_preprocessing.py",
+        "sha256": "f8590bea226a63ae9756cbcc34c546eeb381f9c557205a363b1057d1f65061aa"
+      },
+      {
+        "path": "src/nguven_evaluation/image_transformers_backend.py",
+        "sha256": "0194ef9c46b8eb60afc83e4e7dd4cbdddf43282c29e730ca33b3878d4bc86e06"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "adapterId": "siglip2-aiornot",
+      "modelRevision": "f4e6a281725e8dfb11a1d8c959b69737bba1e91d",
+      "createdAt": "2026-08-30T19:08:22.077277Z",
+      "runMetadataSha256": "02e10752961fc73e014a951205cb00096c8e4e8bb8be1b3e2fa37eff3b21ae79",
+      "evaluationManifestSha256": "38394d41ec6097f5ceef742332e5dc74bbbaf290b643cb16c053737640299a0c",
+      "predictionsSha256": "d26f10911a5683969a4613b90ec6831247e94f6a45c3aded70ceba4d8edf99f9",
+      "resultSha256": "32de628a585ec4cb2062f80c4e3581e7b83260cd3882864f4d48d8b23388b997"
+    },
+    {
+      "adapterId": "vit-cifake",
+      "modelRevision": "a6661e07d38f1a097bba07ca9415538819278f09",
+      "createdAt": "2026-08-30T19:14:59.224677Z",
+      "runMetadataSha256": "7121ddf491bea6f41717aa7fa4b83bdbdcbf600e75a159867c1dff808c3d4cd3",
+      "evaluationManifestSha256": "38394d41ec6097f5ceef742332e5dc74bbbaf290b643cb16c053737640299a0c",
+      "predictionsSha256": "8ace0d0f19aa9aa9b83baab18f0968c370b2911bf54c2f1cf0297c8eb555cc46",
+      "resultSha256": "ffd91743b923157666394e97f6c390f08d6c3e32d63300359c3054b3e257ae2b"
+    }
+  ],
+  "comparison": {
+    "path": "image/comparisons/image-origin-robustness-v1.json",
+    "sha256": "12ba6108af523ac3f8d65daafd8355aff5988d3f90b040e73a12037eed00f3da",
+    "status": "no-qualified-candidate",
+    "rankingLeader": "vit-cifake",
+    "selectedCandidate": null
+  },
+  "limitations": [
+    "The frozen external benchmark is source-separated but does not establish unseen-domain production generalization.",
+    "Both candidates failed at least one predeclared acceptance target, so rank one is not a prototype selection.",
+    "Raw images, model weights, and per-record predictions remain local and are not published."
+  ]
+}

@@ -1,6 +1,8 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from pathlib import Path
 
@@ -14,6 +16,7 @@ from nguven_evaluation.image_preprocessing import (
     ImagePreprocessingError,
     build_image_variants,
     write_preprocessed_image_dataset,
+    ROBUSTNESS_TRANSFORMATIONS,
 )
 
 
@@ -150,6 +153,25 @@ def test_rejects_duplicate_input_ids(tmp_path: Path) -> None:
             [_verified(first), _verified(second)],
             tmp_path / "output",
         )
+
+
+def test_preprocesses_primary_view_of_two_view_mpo(tmp_path: Path) -> None:
+    path = tmp_path / "stereo.mpo"
+    output = io.BytesIO()
+    Image.new("RGB", (64, 64), "white").save(
+        output,
+        format="MPO",
+        save_all=True,
+        append_images=[Image.new("RGB", (64, 64), "black")],
+    )
+    path.write_bytes(output.getvalue())
+
+    records = write_preprocessed_image_dataset(
+        [_verified(path, record_id="mpo-1")],
+        tmp_path / "processed",
+    )
+
+    assert len(records) == len(ROBUSTNESS_TRANSFORMATIONS)
 
 
 def test_cli_verifies_then_preprocesses_images(

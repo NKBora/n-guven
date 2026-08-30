@@ -1,0 +1,173 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
+{
+  "benchmark": {
+    "evidenceAllowed": true,
+    "id": "image-origin-robustness",
+    "recordCount": 1050,
+    "sha256": "c650748b443e3a70c7cda7aeb9107a9e67c8b917e058e871bfa06cdd2939b4f6",
+    "variantCount": 6300,
+    "version": "v1"
+  },
+  "candidates": [
+    {
+      "acceptance": {
+        "checks": {
+          "highConfidenceFalsePositiveRate": false,
+          "macroF1": false,
+          "p95InferenceMs": true,
+          "worstTransformationMacroF1": false
+        },
+        "status": "failed"
+      },
+      "adapterId": "vit-cifake",
+      "artifacts": {
+        "predictionsSha256": "8ace0d0f19aa9aa9b83baab18f0968c370b2911bf54c2f1cf0297c8eb555cc46",
+        "resultSha256": "ffd91743b923157666394e97f6c390f08d6c3e32d63300359c3054b3e257ae2b"
+      },
+      "metrics": {
+        "accuracy": 0.5765079365079365,
+        "brierScore": 0.28351692769029585,
+        "highConfidenceFalsePositiveRate": 0.30666666666666664,
+        "macroF1": 0.531738086238375,
+        "p95InferenceMs": 63.589959,
+        "prAuc": 0.5773313142353623,
+        "worstTransformationMacroF1": 0.5088970515948558
+      },
+      "modelRevision": "a6661e07d38f1a097bba07ca9415538819278f09",
+      "rank": 1,
+      "runId": "vit-syncred-v1",
+      "transformations": [
+        {
+          "falsePositiveRate": 0.6888888888888889,
+          "macroF1": 0.5372681424469877,
+          "name": "canonical",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.6866666666666666,
+          "macroF1": 0.5378870202499851,
+          "name": "jpeg-q90",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.68,
+          "macroF1": 0.5404647950661698,
+          "name": "jpeg-q70",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.6888888888888889,
+          "macroF1": 0.5372681424469877,
+          "name": "resize-75",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.6844444444444444,
+          "macroF1": 0.5287459955876662,
+          "name": "center-crop-90",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.7,
+          "macroF1": 0.5088970515948558,
+          "name": "screenshot-v1",
+          "recordCount": 1050
+        }
+      ]
+    },
+    {
+      "acceptance": {
+        "checks": {
+          "highConfidenceFalsePositiveRate": true,
+          "macroF1": false,
+          "p95InferenceMs": true,
+          "worstTransformationMacroF1": false
+        },
+        "status": "failed"
+      },
+      "adapterId": "siglip2-aiornot",
+      "artifacts": {
+        "predictionsSha256": "d26f10911a5683969a4613b90ec6831247e94f6a45c3aded70ceba4d8edf99f9",
+        "resultSha256": "32de628a585ec4cb2062f80c4e3581e7b83260cd3882864f4d48d8b23388b997"
+      },
+      "metrics": {
+        "accuracy": 0.41619047619047617,
+        "brierScore": 0.49502904254620334,
+        "highConfidenceFalsePositiveRate": 0.04,
+        "macroF1": 0.34052336683093865,
+        "p95InferenceMs": 68.34475,
+        "prAuc": 0.5074040836501832,
+        "worstTransformationMacroF1": 0.31723484848484845
+      },
+      "modelRevision": "f4e6a281725e8dfb11a1d8c959b69737bba1e91d",
+      "rank": 2,
+      "runId": "siglip2-syncred-v1",
+      "transformations": [
+        {
+          "falsePositiveRate": 0.12666666666666668,
+          "macroF1": 0.34675096299630076,
+          "name": "canonical",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.12222222222222222,
+          "macroF1": 0.3479650738911736,
+          "name": "jpeg-q90",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.12222222222222222,
+          "macroF1": 0.3479650738911736,
+          "name": "jpeg-q70",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.12666666666666668,
+          "macroF1": 0.34675096299630076,
+          "name": "resize-75",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.13111111111111112,
+          "macroF1": 0.3347612293530732,
+          "name": "center-crop-90",
+          "recordCount": 1050
+        },
+        {
+          "falsePositiveRate": 0.08666666666666667,
+          "macroF1": 0.31723484848484845,
+          "name": "screenshot-v1",
+          "recordCount": 1050
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-08-30T19:15:23.417757Z",
+  "protocol": {
+    "acceptanceTargets": {
+      "maximumHighConfidenceFalsePositiveRate": 0.05,
+      "maximumP95InferenceMs": 3000.0,
+      "minimumMacroF1": 0.8,
+      "minimumWorstTransformationMacroF1": 0.7
+    },
+    "selectionOrder": [
+      "worstTransformationMacroF1",
+      "macroF1",
+      "highConfidenceFalsePositiveRate",
+      "p95InferenceMs"
+    ],
+    "transformations": [
+      "canonical",
+      "jpeg-q90",
+      "jpeg-q70",
+      "resize-75",
+      "center-crop-90",
+      "screenshot-v1"
+    ]
+  },
+  "schemaVersion": "image-model-comparison-v1",
+  "selection": {
+    "leaders": [],
+    "status": "no-qualified-candidate"
+  }
+}
