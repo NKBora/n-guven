@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 # N-Güven Evaluation Pipeline
 
 This package provides model-independent, reproducible controls for N-Güven dataset manifests and offline prediction artifacts.
@@ -117,6 +118,25 @@ Offline prediction preparation re-verifies every preprocessed variant, requires 
 transformations for every source image, joins private labels with exact coverage, and
 produces stable variant IDs plus transformation-aware evaluation records. Inference
 errors expose only the variant ID, never image bytes or filenames.
+
+Run each reviewed detector with verified local weights and no network access. The runner
+performs identical warm-up, requires the full frozen protocol, records per-image latency,
+and atomically writes owner-only manifests, predictions, metrics, and provenance:
+
+```bash
+nguven-eval run-image-benchmark \
+  --adapter-id siglip2-aiornot \
+  --preprocessed-root image/preprocessed/syncred-v1 \
+  --labels image/benchmarks/private/syncred-v1/labels.jsonl \
+  --artifact-root image/models/artifacts/siglip2-aiornot \
+  --output image/predictions/siglip2-syncred-v1 \
+  --run-id siglip2-syncred-v1 \
+  --git-commit "$(git rev-parse HEAD)" \
+  --device mps
+```
+
+Until the benchmark materialization is reviewed, generated run metadata is explicitly
+marked `experimental-unreviewed`; the runner does not convert it into a public claim.
 
 ## Turkish text benchmark source lock
 

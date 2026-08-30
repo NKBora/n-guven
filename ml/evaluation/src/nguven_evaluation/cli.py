@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 """Command-line interface for N-Güven evaluation tooling."""
 
 from __future__ import annotations
@@ -97,6 +98,10 @@ from nguven_evaluation.image_benchmark_materialization import (
     ImageBenchmarkMaterializationError,
     fetch_locked_image_sources,
     materialize_image_benchmark,
+)
+from nguven_evaluation.image_benchmark_runner import (
+    ImageBenchmarkRunError,
+    run_image_benchmark,
 )
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
@@ -370,6 +375,29 @@ def build_parser() -> argparse.ArgumentParser:
         "--schema", type=Path, default=DEFAULT_IMAGE_BENCHMARK_SCHEMA_PATH
     )
     image_materialize_benchmark_parser.add_argument(
+        "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
+    )
+
+    image_run_parser = subparsers.add_parser(
+        "run-image-benchmark",
+        help="run one reviewed image candidate against private frozen inputs",
+    )
+    image_run_parser.add_argument(
+        "--adapter-id", choices=("siglip2-aiornot", "vit-cifake"), required=True
+    )
+    image_run_parser.add_argument("--preprocessed-root", type=Path, required=True)
+    image_run_parser.add_argument("--labels", type=Path, required=True)
+    image_run_parser.add_argument("--artifact-root", type=Path, required=True)
+    image_run_parser.add_argument("--output", type=Path, required=True)
+    image_run_parser.add_argument("--run-id", required=True)
+    image_run_parser.add_argument("--git-commit", required=True)
+    image_run_parser.add_argument("--device", choices=("cpu", "mps", "cuda"), default="cpu")
+    image_run_parser.add_argument("--seed", type=int, default=42)
+    image_run_parser.add_argument("--warmup-iterations", type=int, default=3)
+    image_run_parser.add_argument(
+        "--benchmark", type=Path, default=DEFAULT_IMAGE_BENCHMARK_PATH
+    )
+    image_run_parser.add_argument(
         "--candidate-registry", type=Path, default=DEFAULT_IMAGE_CANDIDATES_PATH
     )
 
@@ -899,6 +927,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 image_source_paths,
                 args.output,
             )
+        elif args.command == "run-image-benchmark":
+            image_benchmark_run = run_image_benchmark(
+                adapter_id=args.adapter_id,
+                preprocessed_root=args.preprocessed_root,
+                labels_path=args.labels,
+                artifact_root=args.artifact_root,
+                output_root=args.output,
+                run_id=args.run_id,
+                git_commit=args.git_commit,
+                device=args.device,
+                seed=args.seed,
+                warmup_iterations=args.warmup_iterations,
+                benchmark_path=args.benchmark,
+                candidate_registry_path=args.candidate_registry,
+            )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -991,6 +1034,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ImageModelAdapterError,
         ImageBenchmarkContractError,
         ImageBenchmarkMaterializationError,
+        ImageBenchmarkRunError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -1100,6 +1144,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Materialized {image_materialization_summary['recordCount']} private image "
             f"benchmark record(s) at {args.output}"
+        )
+    elif args.command == "run-image-benchmark":
+        print(
+            f"Wrote {image_benchmark_run['run']['counts']['predictions']} private "
+            f"prediction(s) and evaluation evidence to {args.output}"
         )
     elif args.command == "verify-content-hashes":
         print(
