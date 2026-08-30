@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 name: AI Validation
 
 on:
@@ -23,7 +24,7 @@ concurrency:
 
 jobs:
   contracts:
-    name: Python, training, calibration and comparison contracts
+    name: Text and image AI pipeline contracts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -85,7 +86,13 @@ jobs:
             tests/test_image_offline_predictions.py \
             tests/test_image_benchmark.py \
             tests/test_image_benchmark_materialization.py \
-            tests/test_image_transformers_backend.py
+            tests/test_image_transformers_backend.py \
+            tests/test_image_benchmark_runner.py \
+            tests/test_image_comparison.py
+
+      - name: Test image benchmark pipeline end to end
+        working-directory: ml/evaluation
+        run: python -m pytest tests/test_image_pipeline.py
 
       - name: Test fine-tuning and comparison readiness contracts
         working-directory: ml/evaluation
@@ -114,6 +121,8 @@ jobs:
           nguven-eval materialize-image-model --help >/dev/null
           nguven-eval verify-image-model --help >/dev/null
           nguven-eval materialize-image-benchmark --help >/dev/null
+          nguven-eval run-image-benchmark --help >/dev/null
+          nguven-eval compare-image-models --help >/dev/null
           nguven-eval verify-content-hashes --help >/dev/null
           nguven-eval preprocess-text --help >/dev/null
           nguven-eval predict-text --help >/dev/null
@@ -137,6 +146,13 @@ jobs:
           git check-ignore --quiet --no-index ml/evaluation/finetuning/runs/private-run/training/train.jsonl
           git check-ignore --quiet --no-index ml/evaluation/comparisons/reports/private-run.json
           git check-ignore --quiet --no-index ml/evaluation/calibration/runs/private-run.json
+          git check-ignore --quiet --no-index ml/evaluation/image/benchmarks/private/syncred-v1/labels.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/image/benchmarks/cache/syncred-v1/source.parquet
+          git check-ignore --quiet --no-index ml/evaluation/image/preprocessed/syncred-v1/manifest.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/image/predictions/private-run/predictions.jsonl
+          git check-ignore --quiet --no-index ml/evaluation/image/models/artifacts/siglip2/model.safetensors
+          git check-ignore --quiet --no-index ml/evaluation/image/models/cache/download/model.safetensors
+          git check-ignore --quiet --no-index ml/evaluation/image/comparisons/private/report.json
 
   container:
     name: Packaged BERTurk runtime

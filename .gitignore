@@ -1,3 +1,4 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 # Environment files
 .env
 .env.*
@@ -71,6 +72,8 @@ ml/evaluation/image/preprocessed/*
 !ml/evaluation/image/preprocessed/schema.json
 ml/evaluation/image/predictions/
 ml/evaluation/image/models/artifacts/
+ml/evaluation/image/models/cache/
+ml/evaluation/image/comparisons/private/
 
 # Local ML model weights and caches (contracts remain tracked)
 ml/evaluation/models/artifacts/
