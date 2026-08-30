@@ -2,13 +2,20 @@
 
 FastAPI foundation for the Turkish text AI-generation signal service. The HTTP contract, validation, and inference boundary are implemented; the inference adapter is currently a deterministic, model-independent stub.
 
-**Current status: service foundation only.**
+**Current status: BERTurk prototype release registered; runtime integration pending.**
 
 **No ML model is currently loaded.**
 
 **No measured model accuracy exists yet.**
 
-ModernBERT-TR and BERTurk are future model candidates. Neither is implemented, selected, or benchmarked by this service.
+BERTurk was selected over ModernBERT-TR for prototype integration by the frozen
+three-seed comparison. The service release registry pins the validation-selected
+seed-17 model manifest, weights, calibration, and threshold identities by SHA-256.
+The 442 MB weights remain outside Git and must later be supplied through the approved
+runtime artifact channel.
+
+The registered release is not production approval. Its near-perfect validation result
+may contain source/style shortcuts and still requires external-domain evidence.
 
 ## Contract
 
