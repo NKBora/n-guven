@@ -1,18 +1,16 @@
 # N-Güven Text AI Service
 
-FastAPI foundation for the Turkish text AI-generation signal service. The HTTP contract, validation, and inference boundary are implemented; the inference adapter is currently a deterministic, model-independent stub.
+FastAPI service for the calibrated Turkish text AI-generation prototype signal. The HTTP
+contract keeps a safe fallback when no private model bundle is mounted.
 
-**Current status: BERTurk prototype release registered; runtime integration pending.**
-
-**No ML model is currently loaded.**
-
-**No measured model accuracy exists yet.**
+**Current status: calibrated BERTurk prototype runtime implemented.**
 
 BERTurk was selected over ModernBERT-TR for prototype integration by the frozen
 three-seed comparison. The service release registry pins the validation-selected
 seed-17 model manifest, weights, calibration, and threshold identities by SHA-256.
-The 442 MB weights remain outside Git and must later be supplied through the approved
-runtime artifact channel.
+The 442 MB weights remain outside Git and must be supplied through the approved runtime
+artifact channel. The service verifies the registered model manifest, calibration, and
+every declared artifact before loading local safetensors without remote code execution.
 
 The registered release is not production approval. Its near-perfect validation result
 may contain source/style shortcuts and still requires external-domain evidence.
@@ -21,8 +19,13 @@ may contain source/style shortcuts and still requires external-domain evidence.
 
 - `GET /health` reports local service health.
 - `POST /v1/analyze/text` validates an analysis identifier and Turkish text, then returns the stable analysis response contract.
-- The current stub always returns `score = null`, `confidenceLevel = "UNAVAILABLE"`, and unconfigured version identifiers.
-- `inferenceMs = 0` is a stub contract value, not a measured model inference latency.
+- Without `TEXT_AI_MODEL_ROOT`, the safe fallback returns `score = null`,
+  `confidenceLevel = "UNAVAILABLE"`, and unconfigured version identifiers.
+- With a verified artifact root, `score` is the validation-calibrated probability of the
+  `synthetic` class. Scores at or below `0.2` are `LOW`, scores at or above `0.8` are
+  `HIGH`, and the middle band is `UNCERTAIN`.
+- `inferenceMs` measures the local model call in the configured path; the safe fallback
+  retains the explicit value `0`.
 
 The service exposes only possible AI/synthetic-generation signals. It does not assess claims and does not make moderation decisions.
 
@@ -62,7 +65,22 @@ The maximum accepted text length defaults to 10,000 Unicode characters. Override
 TEXT_AI_MAX_TEXT_LENGTH=12000 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-No tokenizer limit is applied because no model or tokenizer is loaded.
+The registered runtime truncates tokenized input to the frozen 128-token model limit.
+Raw request text is still bounded by the API character limit before tokenization.
+
+## Local model runtime
+
+Install the optional inference dependencies and mount the private release bundle:
+
+```bash
+python -m pip install -e ".[inference]"
+TEXT_AI_MODEL_ROOT=/secure/path/berturk-text-origin-v1 \
+  uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+The directory must contain `model-manifest.json`, `calibration.json`, and every file
+declared by the manifest. Any missing file, symbolic link, size mismatch, hash mismatch,
+model identity mismatch, or calibration mismatch fails closed before model use.
 
 ## Docker
 
