@@ -52,6 +52,16 @@ nguven-eval validate-image-input path/to/private-images.jsonl \
   --image-root path/to/private-images
 ```
 
+The `image-preprocessing-v1` command strips metadata, applies EXIF orientation, converts
+to deterministic RGB, and writes canonical plus JPEG, resize, crop, and screenshot
+robustness variants into a new private directory:
+
+```bash
+nguven-eval preprocess-image path/to/private-images.jsonl \
+  --image-root path/to/private-images \
+  --output image/preprocessed/private-run
+```
+
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than

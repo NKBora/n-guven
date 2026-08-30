@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nguven:schema:image-preprocessed-record:v1",
+  "title": "N-Güven Preprocessed Image Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "sourceSha256",
+    "preprocessingVersion",
+    "transformation",
+    "path",
+    "sha256",
+    "sizeBytes",
+    "width",
+    "height",
+    "format"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,255}$"},
+    "sourceSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "preprocessingVersion": {"const": "image-preprocessing-v1"},
+    "transformation": {
+      "enum": [
+        "canonical",
+        "jpeg-q90",
+        "jpeg-q70",
+        "resize-75",
+        "center-crop-90",
+        "screenshot-v1"
+      ]
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sizeBytes": {"type": "integer", "minimum": 1},
+    "width": {"type": "integer", "minimum": 1, "maximum": 16384},
+    "height": {"type": "integer", "minimum": 1, "maximum": 16384},
+    "format": {"enum": ["png", "jpeg"]}
+  }
+}

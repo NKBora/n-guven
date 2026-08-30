@@ -71,6 +71,11 @@ from nguven_evaluation.image_dataset_inputs import (
     ImageDatasetInputError,
     load_image_dataset_inputs,
 )
+from nguven_evaluation.image_preprocessing import (
+    DEFAULT_IMAGE_PREPROCESSED_SCHEMA_PATH,
+    ImagePreprocessingError,
+    write_preprocessed_image_dataset,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -236,6 +241,37 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MAX_IMAGE_BYTES,
     )
     image_input_parser.add_argument(
+        "--max-total-bytes",
+        type=int,
+        default=DEFAULT_MAX_TOTAL_IMAGE_BYTES,
+    )
+
+    image_preprocess_parser = subparsers.add_parser(
+        "preprocess-image",
+        help="verify and materialize versioned private image robustness variants",
+    )
+    image_preprocess_parser.add_argument("manifest", type=Path)
+    image_preprocess_parser.add_argument("--image-root", type=Path, required=True)
+    image_preprocess_parser.add_argument("--output", type=Path, required=True)
+    image_preprocess_parser.add_argument(
+        "--input-schema", type=Path, default=DEFAULT_IMAGE_INPUT_SCHEMA_PATH
+    )
+    image_preprocess_parser.add_argument(
+        "--output-schema",
+        type=Path,
+        default=DEFAULT_IMAGE_PREPROCESSED_SCHEMA_PATH,
+    )
+    image_preprocess_parser.add_argument(
+        "--max-manifest-bytes",
+        type=int,
+        default=DEFAULT_MAX_IMAGE_MANIFEST_BYTES,
+    )
+    image_preprocess_parser.add_argument(
+        "--max-image-bytes",
+        type=int,
+        default=DEFAULT_MAX_IMAGE_BYTES,
+    )
+    image_preprocess_parser.add_argument(
         "--max-total-bytes",
         type=int,
         default=DEFAULT_MAX_TOTAL_IMAGE_BYTES,
@@ -707,6 +743,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 max_image_bytes=args.max_image_bytes,
                 max_total_bytes=args.max_total_bytes,
             )
+        elif args.command == "preprocess-image":
+            verified_images = load_image_dataset_inputs(
+                args.manifest,
+                image_root=args.image_root,
+                schema_path=args.input_schema,
+                max_manifest_bytes=args.max_manifest_bytes,
+                max_image_bytes=args.max_image_bytes,
+                max_total_bytes=args.max_total_bytes,
+            )
+            image_variants = write_preprocessed_image_dataset(
+                verified_images,
+                args.output,
+                schema_path=args.output_schema,
+            )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -795,6 +845,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ExperimentContractError,
         FineTuningReadinessError,
         ImageDatasetInputError,
+        ImagePreprocessingError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -877,6 +928,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"Verified {len(verified_images)} private image input(s) from "
             f"{args.manifest}"
+        )
+    elif args.command == "preprocess-image":
+        print(
+            f"Wrote {len(image_variants)} image variant(s) for "
+            f"{len(verified_images)} input(s) to {args.output}"
         )
     elif args.command == "verify-content-hashes":
         print(

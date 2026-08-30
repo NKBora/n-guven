@@ -52,6 +52,13 @@ from nguven_evaluation.image_dataset_inputs import (
     VerifiedImageInput,
     load_image_dataset_inputs,
 )
+from nguven_evaluation.image_preprocessing import (
+    DEFAULT_IMAGE_PREPROCESSING_VERSION,
+    ImagePreprocessingError,
+    ImageVariant,
+    build_image_variants,
+    write_preprocessed_image_dataset,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -124,6 +131,7 @@ __all__ = [
     "DatasetLeakageError",
     "DatasetInputError",
     "DatasetIntegrityError",
+    "DEFAULT_IMAGE_PREPROCESSING_VERSION",
     "DEFAULT_PREPROCESSING_VERSION",
     "EvaluationInputError",
     "EvaluationMetadata",
@@ -131,6 +139,8 @@ __all__ = [
     "FineTuningReadinessError",
     "IntegrityReport",
     "ImageDatasetInputError",
+    "ImagePreprocessingError",
+    "ImageVariant",
     "InferenceDataError",
     "ManifestValidationError",
     "MODERNBERT_TR",
@@ -158,6 +168,7 @@ __all__ = [
     "benchmark_evidence_allowed",
     "brier_score",
     "build_preprocessed_records",
+    "build_image_variants",
     "build_prediction_records",
     "build_finetuning_plan",
     "build_training_requests",
@@ -195,6 +206,7 @@ __all__ = [
     "write_private_finetuning_package",
     "write_private_inference_split",
     "write_private_predictions",
+    "write_preprocessed_image_dataset",
     "write_comparison_report",
     "write_model_manifest",
 ]

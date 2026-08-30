@@ -67,7 +67,8 @@ ml/evaluation/image/inputs/*
 !ml/evaluation/image/inputs/schema.json
 ml/evaluation/image/benchmarks/private/
 ml/evaluation/image/benchmarks/cache/
-ml/evaluation/image/preprocessed/
+ml/evaluation/image/preprocessed/*
+!ml/evaluation/image/preprocessed/schema.json
 ml/evaluation/image/predictions/
 ml/evaluation/image/models/artifacts/
 
