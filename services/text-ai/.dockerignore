@@ -5,3 +5,9 @@
 __pycache__
 *.py[cod]
 tests
+artifacts
+*.bin
+*.onnx
+*.pt
+*.pth
+*.safetensors
