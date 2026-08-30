@@ -62,6 +62,15 @@ ml/evaluation/calibration/runs/
 ml/evaluation/benchmarks/private/
 ml/evaluation/benchmarks/cache/
 
+# Local image benchmark inputs and generated artifacts
+ml/evaluation/image/inputs/*
+!ml/evaluation/image/inputs/schema.json
+ml/evaluation/image/benchmarks/private/
+ml/evaluation/image/benchmarks/cache/
+ml/evaluation/image/preprocessed/
+ml/evaluation/image/predictions/
+ml/evaluation/image/models/artifacts/
+
 # Local ML model weights and caches (contracts remain tracked)
 ml/evaluation/models/artifacts/
 ml/evaluation/models/cache/

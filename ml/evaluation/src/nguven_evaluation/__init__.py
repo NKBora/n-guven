@@ -47,6 +47,11 @@ from nguven_evaluation.inference_data import (
     prepare_inference_split,
     write_private_inference_split,
 )
+from nguven_evaluation.image_dataset_inputs import (
+    ImageDatasetInputError,
+    VerifiedImageInput,
+    load_image_dataset_inputs,
+)
 from nguven_evaluation.finetuning import (
     FineTuningReadinessError,
     PreparedFineTuningPackage,
@@ -125,6 +130,7 @@ __all__ = [
     "ExperimentContractError",
     "FineTuningReadinessError",
     "IntegrityReport",
+    "ImageDatasetInputError",
     "InferenceDataError",
     "ManifestValidationError",
     "MODERNBERT_TR",
@@ -146,6 +152,7 @@ __all__ = [
     "TrainingStageResult",
     "TransformersTrainerBackend",
     "VerifiedModelArtifacts",
+    "VerifiedImageInput",
     "assign_splits",
     "audit_manifest",
     "benchmark_evidence_allowed",
@@ -170,6 +177,7 @@ __all__ = [
     "load_label_ontology",
     "load_model_artifact_manifest",
     "load_dataset_input",
+    "load_image_dataset_inputs",
     "load_predictions",
     "load_training_splits",
     "load_preprocessed_records",

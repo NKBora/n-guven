@@ -63,6 +63,14 @@ from nguven_evaluation.inference_data import (
     sha256_file as inference_sha256,
     write_private_inference_split,
 )
+from nguven_evaluation.image_dataset_inputs import (
+    DEFAULT_IMAGE_INPUT_SCHEMA_PATH,
+    DEFAULT_MAX_IMAGE_BYTES,
+    DEFAULT_MAX_IMAGE_MANIFEST_BYTES,
+    DEFAULT_MAX_TOTAL_IMAGE_BYTES,
+    ImageDatasetInputError,
+    load_image_dataset_inputs,
+)
 from nguven_evaluation.finetuning import (
     DEFAULT_FINETUNING_PLAN_SCHEMA_PATH,
     DEFAULT_FINETUNING_RECORD_SCHEMA_PATH,
@@ -206,6 +214,31 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-file-bytes",
         type=int,
         default=DEFAULT_MAX_INPUT_BYTES,
+    )
+
+    image_input_parser = subparsers.add_parser(
+        "validate-image-input",
+        help="verify a local-only image manifest and every referenced file",
+    )
+    image_input_parser.add_argument("manifest", type=Path)
+    image_input_parser.add_argument("--image-root", type=Path, required=True)
+    image_input_parser.add_argument(
+        "--schema", type=Path, default=DEFAULT_IMAGE_INPUT_SCHEMA_PATH
+    )
+    image_input_parser.add_argument(
+        "--max-manifest-bytes",
+        type=int,
+        default=DEFAULT_MAX_IMAGE_MANIFEST_BYTES,
+    )
+    image_input_parser.add_argument(
+        "--max-image-bytes",
+        type=int,
+        default=DEFAULT_MAX_IMAGE_BYTES,
+    )
+    image_input_parser.add_argument(
+        "--max-total-bytes",
+        type=int,
+        default=DEFAULT_MAX_TOTAL_IMAGE_BYTES,
     )
 
     integrity_parser = subparsers.add_parser(
@@ -665,6 +698,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                 schema_path=args.schema,
                 max_file_bytes=args.max_file_bytes,
             )
+        elif args.command == "validate-image-input":
+            verified_images = load_image_dataset_inputs(
+                args.manifest,
+                image_root=args.image_root,
+                schema_path=args.schema,
+                max_manifest_bytes=args.max_manifest_bytes,
+                max_image_bytes=args.max_image_bytes,
+                max_total_bytes=args.max_total_bytes,
+            )
         else:
             records = load_manifest(args.manifest, schema_path=args.schema)
         if args.command == "preprocess-text":
@@ -752,6 +794,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         EvaluationInputError,
         ExperimentContractError,
         FineTuningReadinessError,
+        ImageDatasetInputError,
         InferenceDataError,
         ManifestValidationError,
         ModelAdapterError,
@@ -830,6 +873,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Validated {len(records)} record(s) from {args.manifest}")
     elif args.command == "validate-input":
         print(f"Validated {len(records)} local input record(s) from {args.input}")
+    elif args.command == "validate-image-input":
+        print(
+            f"Verified {len(verified_images)} private image input(s) from "
+            f"{args.manifest}"
+        )
     elif args.command == "verify-content-hashes":
         print(
             f"Verified {integrity_report.verified_record_count} content hash(es) "

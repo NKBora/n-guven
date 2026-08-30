@@ -38,10 +38,19 @@ unseen-domain generalization. The canonical report is
 - Validation-only temperature scaling plus PR-AUC, Brier, ECE, high-confidence false
   positive rate, P95 latency, source/generator/transformation slices, and 95% confidence
   intervals across seeds.
+- Local-only image input verification with bounded manifests, safe relative paths,
+  symbolic-link isolation, byte-size limits, and SHA-256 integrity checks before decode.
 
 The package downloads data only through the explicit hash-verified materialization
 command and model weights only through the opt-in training command. It does not make
 benchmark claims until reviewed private artifacts bind the exact hashes.
+
+Private image inputs can be verified without logging their contents:
+
+```bash
+nguven-eval validate-image-input path/to/private-images.jsonl \
+  --image-root path/to/private-images
+```
 
 ## Turkish text benchmark source lock
 
