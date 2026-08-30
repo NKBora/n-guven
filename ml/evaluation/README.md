@@ -113,6 +113,11 @@ nguven-eval materialize-image-benchmark \
   --allow-network
 ```
 
+Offline prediction preparation re-verifies every preprocessed variant, requires all six
+transformations for every source image, joins private labels with exact coverage, and
+produces stable variant IDs plus transformation-aware evaluation records. Inference
+errors expose only the variant ID, never image bytes or filenames.
+
 ## Turkish text benchmark source lock
 
 `benchmarks/text-origin-tr-v1.json` pins reviewed candidate sources rather than

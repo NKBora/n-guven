@@ -82,6 +82,7 @@ jobs:
             tests/test_image_dataset_inputs.py \
             tests/test_image_preprocessing.py \
             tests/test_image_model_adapters.py \
+            tests/test_image_offline_predictions.py \
             tests/test_image_benchmark.py \
             tests/test_image_benchmark_materialization.py \
             tests/test_image_transformers_backend.py
